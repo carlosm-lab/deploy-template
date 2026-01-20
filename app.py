@@ -11,6 +11,7 @@ import traceback
 import uuid
 import logging
 import ipaddress
+import hmac
 from datetime import datetime, timezone
 from functools import wraps
 
@@ -170,16 +171,18 @@ if ENABLE_RATE_LIMIT or IS_DEVELOPMENT:
         """Apply rate limit decorator."""
         return limiter.limit(limit_string)
 else:
-    # No-op decorator for production - rate limiting handled by Edge middleware
+    # No-op decorator for production
+    # IMPORTANT: In production (Vercel), configure rate limiting via:
+    # - Vercel Dashboard > Project Settings > Security > Rate Limiting
+    # - Or use Vercel Firewall / WAF for enterprise
     def rate_limit(limit_string):
         def decorator(f):
             return f
         return decorator
     limiter = None
     
-    # Log that rate limiting is delegated to Edge middleware
     logger.info(
-        "Flask rate limiting disabled. Using Edge middleware (middleware.js) for production.",
+        "Flask rate limiting disabled. Configure rate limiting in Vercel Dashboard for production.",
         extra={"component": "security", "production": True}
     )
 
@@ -210,8 +213,8 @@ def before_request():
     if user_request_id and REQUEST_ID_PATTERN.match(user_request_id):
         g.request_id = user_request_id[:36]
     else:
-        # M8: Increased from 8 to 12 chars to reduce collision risk
-        g.request_id = str(uuid.uuid4()).replace('-', '')[:12]
+        # Use full UUID for zero collision risk
+        g.request_id = str(uuid.uuid4())
     g.request_start = datetime.now(timezone.utc)
 
 
@@ -221,13 +224,17 @@ def after_request(response):
     # Add request ID to response for tracing
     response.headers['X-Request-ID'] = g.request_id
     
-    # A2: Security headers for dev/prod parity (Vercel adds these too, but this ensures local dev matches)
+    # Security headers for dev/prod parity (Vercel adds these too, but this ensures local dev matches)
     # Only add if not already present (allows Vercel to override)
     security_headers = {
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
+        # CSP matches vercel.json for dev/prod parity
+        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self';",
+        # HSTS - 1 year with preload
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
     }
     for header, value in security_headers.items():
         if header not in response.headers:
@@ -258,8 +265,9 @@ def require_health_token(f):
         # In production, require a secret token if configured
         health_token = os.environ.get('HEALTH_CHECK_TOKEN')
         if health_token:
-            provided_token = request.headers.get('X-Health-Token')
-            if provided_token != health_token:
+            provided_token = request.headers.get('X-Health-Token', '')
+            # Use hmac.compare_digest to prevent timing attacks
+            if not hmac.compare_digest(provided_token, health_token):
                 return Response('Unauthorized', status=401)
         return f(*args, **kwargs)
     return decorated_function
@@ -379,7 +387,7 @@ def internal_error(error):
             log_extra["exception"] = str(error)
     
     logger.error(f"Internal server error (ref: {error_id})", extra=log_extra)
-    return render_template('errors/500.html'), 500
+    return render_template('errors/500.html', error_id=error_id), 500
 
 
 # Note: We intentionally don't use @app.errorhandler(Exception) as it can

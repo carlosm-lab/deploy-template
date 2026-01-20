@@ -1,26 +1,28 @@
 /**
  * Service Worker - Deploy Template PWA
- * Version: 1.0.0
+ * Version: 1.1.0
  * =============================================================================
- * Basic service worker for PWA installation support.
- * Provides shell caching for offline access to static assets.
+ * Service worker for PWA installation support.
+ * Uses Cache-First for static assets, Network-First for dynamic content.
  * 
- * M12: Added to enable full PWA functionality.
+ * SECURITY: Does NOT cache dynamic routes (/) to prevent stale content issues.
  * =============================================================================
  */
 
-const CACHE_NAME = 'deploy-template-v1';
+const CACHE_NAME = 'deploy-template-v2';
+
+// Only cache truly static assets - NOT dynamic routes like '/'
 const STATIC_ASSETS = [
-    '/',
     '/static/css/main.css',
     '/static/css/tailwind.css',
     '/static/css/fonts.css',
     '/static/js/main.js',
+    '/static/js/sw-register.js',
     '/static/favicon.svg',
     '/static/manifest.json',
 ];
 
-// Install event - cache static assets
+// Install event - cache static assets only
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -59,7 +61,7 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - different strategies for static vs dynamic
 self.addEventListener('fetch', (event) => {
     // Only handle GET requests
     if (event.request.method !== 'GET') {
@@ -71,39 +73,46 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    event.respondWith(
-        caches.match(event.request)
-            .then((cachedResponse) => {
-                if (cachedResponse) {
-                    // Return cached version
-                    return cachedResponse;
-                }
+    const url = new URL(event.request.url);
+    const isStaticAsset = url.pathname.startsWith('/static/');
 
-                // Not in cache, fetch from network
-                return fetch(event.request)
-                    .then((response) => {
-                        // Don't cache non-ok responses
+    if (isStaticAsset) {
+        // Cache-First for static assets
+        event.respondWith(
+            caches.match(event.request)
+                .then((cachedResponse) => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    return fetch(event.request).then((response) => {
                         if (!response || response.status !== 200) {
                             return response;
                         }
-
-                        // Clone the response since it can only be consumed once
                         const responseToCache = response.clone();
-
-                        // Only cache static assets
-                        if (event.request.url.includes('/static/')) {
-                            caches.open(CACHE_NAME)
-                                .then((cache) => {
-                                    cache.put(event.request, responseToCache);
-                                });
-                        }
-
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
                         return response;
-                    })
-                    .catch(() => {
-                        // Network failed, return offline fallback if available
-                        return caches.match('/');
                     });
-            })
-    );
+                })
+        );
+    } else {
+        // Network-First for dynamic content (HTML pages, API routes)
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    return response;
+                })
+                .catch(() => {
+                    // Only for navigation requests, show offline page if available
+                    if (event.request.mode === 'navigate') {
+                        return caches.match('/static/offline.html').then((cached) => {
+                            return cached || new Response('Offline', { status: 503 });
+                        });
+                    }
+                    return new Response('Network error', { status: 503 });
+                })
+        );
+    }
 });
+

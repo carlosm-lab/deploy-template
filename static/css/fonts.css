@@ -1,8 +1,17 @@
 /**
- * Local Fonts - Inter
+ * Local Fonts - Inter & Material Symbols
  * Downloaded from Google Fonts for CSP compliance
  * Eliminates external dependency on fonts.googleapis.com
  */
+
+/* Material Symbols Outlined - Icons */
+@font-face {
+    font-family: 'Material Symbols Outlined';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/static/fonts/MaterialSymbolsOutlined.woff2') format('woff2');
+}
 
 /* Inter 300 - Light */
 @font-face {

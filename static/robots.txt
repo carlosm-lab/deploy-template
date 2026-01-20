@@ -2,18 +2,14 @@
 # https://www.robotstxt.org/
 
 # =============================================================================
-# CURRENT STATUS: Site Under Construction
+# Production Configuration
 # =============================================================================
-# This site is in development and should NOT be indexed by search engines.
-# The sitemap.xml is a placeholder that will be populated when ready.
-#
-# ⚠️  BEFORE PRODUCTION: Change Disallow: / to Allow: / and uncomment Sitemap
+# All crawlers allowed, sitemap referenced
 # =============================================================================
 
 User-agent: *
-Disallow: /
+Allow: /
 
-# When the site is ready for production, change to:
-# User-agent: *
-# Allow: /
-# Sitemap: https://your-domain.com/sitemap.xml
+# Sitemap location (update domain when deployed)
+Sitemap: https://example.vercel.app/static/sitemap.xml
+

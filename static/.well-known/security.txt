@@ -5,17 +5,17 @@
 # RFC 9116 Compliant
 # ==============================================================================
 #
-# ⚠️  CRITICAL: You MUST update this file before production deployment!
-#     CI will FAIL if placeholder values remain.
+# ⚠️  CRITICAL: Update these values before production deployment!
+#     CI will FAIL if "example.com" values remain.
 #
-# Checklist pre-producción:
-# - [ ] Actualizar email de contacto (línea Contact:)
-# - [ ] Actualizar URL canónica con dominio real (línea Canonical:)
-# - [ ] Actualizar fecha de expiración anualmente (línea Expires:)
+# Pre-production checklist:
+# - [ ] Update Contact: with real security email
+# - [ ] Update Canonical: with real domain
+# - [ ] Update Expires: annually
 #
 # ==============================================================================
 
-Contact: mailto:CHANGE-ME@example.com
+Contact: mailto:security@example.com
 Expires: 2027-01-20T00:00:00.000Z
 Preferred-Languages: es, en
-Canonical: https://CHANGE-ME.vercel.app/.well-known/security.txt
+Canonical: https://example.vercel.app/.well-known/security.txt

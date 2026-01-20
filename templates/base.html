@@ -9,8 +9,8 @@
     <!-- SEO Meta Tags -->
     <meta name="description"
         content="{% block meta_description %}Estamos construyendo algo increíble. Nuestro sitio estará disponible muy pronto.{% endblock %}" />
-    <!-- Aligned with robots.txt: noindex while under construction -->
-    <meta name="robots" content="noindex, nofollow" />
+    <!-- Production ready: allow indexing -->
+    <meta name="robots" content="index, follow" />
 
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website" />
@@ -52,20 +52,8 @@
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
-    <!-- Service Worker Registration (M12: PWA support) -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function () {
-                navigator.serviceWorker.register('/static/sw.js')
-                    .then(function (registration) {
-                        console.log('SW registered:', registration.scope);
-                    })
-                    .catch(function (error) {
-                        console.log('SW registration failed:', error);
-                    });
-            });
-        }
-    </script>
+    <!-- Service Worker Registration (CSP compliant - external file) -->
+    <script src="{{ url_for('static', filename='js/sw-register.js') }}"></script>
 
     {% block extra_scripts %}{% endblock %}
 </body>

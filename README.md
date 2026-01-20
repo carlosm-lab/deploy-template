@@ -8,12 +8,26 @@ Plantilla profesional para pre-desplegar en Vercel y reservar dominios.
 
 - ✅ SECRET_KEY obligatoria en producción (fallo explícito si falta)
 - ✅ Headers HTTP seguros (CSP, HSTS, X-Frame-Options)
-- ✅ Rate limiting configurable (desarrollo local)
+- ✅ Rate limiting en desarrollo local (Flask-Limiter)
 - ✅ Logging estructurado JSON con request IDs y nivel configurable
 - ✅ Anonimización IP compatible con GDPR
-- ✅ Manejo de errores sin filtrar información
+- ✅ Manejo de errores sin filtrar información (con ID de referencia)
 - ✅ CSRF preparado para formularios futuros
-- ✅ PWA manifest integrado
+- ✅ PWA con Service Worker (Network-First para contenido dinámico)
+
+## Rate Limiting en Producción
+
+En desarrollo local, Flask-Limiter provee rate limiting en memoria. **En producción (Vercel)**, debes configurar rate limiting a nivel de plataforma:
+
+### Opción 1: Vercel Dashboard (Recomendado)
+1. Ve a **Project Settings > Security > Rate Limiting**
+2. Configura reglas por ruta o IP
+
+### Opción 2: Vercel Firewall (Enterprise)
+Para reglas avanzadas, usa Vercel Firewall en el plan Enterprise.
+
+### Opción 3: Redis (Upstash)
+Para rate limiting distribuido, configura `ENABLE_RATE_LIMIT=true` y usa Upstash Redis como storage.
 
 ## Estructura
 
@@ -104,15 +118,15 @@ pip-audit
 
 ## ⚠️ Pre-Launch Checklist
 
-> **Importante:** Antes de usar este sitio como producción real, revisar:
+> **Importante:** Antes de desplegar a producción con dominio real:
 
-- [ ] **robots.txt**: Cambiar `Disallow: /` a `Allow: /` cuando el sitio esté listo
-- [ ] **meta robots**: Cambiar `noindex, nofollow` a `index, follow` en `base.html`
-- [ ] **SECRET_KEY**: Verificar que está configurada en Vercel Dashboard
-- [ ] **security.txt**: Actualizar email y URL en `static/.well-known/security.txt`
-- [ ] **Dominio**: Configurar dominio personalizado en Vercel
-- [ ] **Analytics**: Agregar tracking si es necesario
-- [ ] **Sitemap**: Actualizar `static/sitemap.xml` con URLs reales
+- [x] **robots.txt**: Configurado con `Allow: /` ✅
+- [x] **meta robots**: Configurado con `index, follow` ✅
+- [x] **sitemap.xml**: Configurado con entrada válida ✅
+- [ ] **SECRET_KEY**: Configurar en Vercel Dashboard (obligatorio)
+- [ ] **security.txt**: Actualizar email y URL con dominio real
+- [ ] **Dominio**: Actualizar `example.vercel.app` en robots.txt, sitemap.xml, security.txt
+- [ ] **Rate Limiting**: Configurar en Vercel Dashboard > Security
 
 ---
 

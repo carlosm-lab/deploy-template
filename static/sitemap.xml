@@ -1,19 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- =============================================================================
-     Sitemap - Deploy Template
-     =============================================================================
-     Placeholder sitemap - Update URLs before production launch
-     Reference: https://www.sitemaps.org/protocol.html
-     ============================================================================= -->
+<!-- Sitemap - Deploy Template -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <!-- 
-    TODO: Add URLs when site is ready for production
-    Example:
     <url>
-        <loc>https://your-domain.com/</loc>
+        <loc>https://example.vercel.app/</loc>
         <lastmod>2026-01-20</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
     </url>
-    -->
 </urlset>
+

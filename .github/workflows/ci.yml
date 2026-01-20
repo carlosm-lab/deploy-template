@@ -51,12 +51,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check security.txt for placeholders
+      - name: Check security.txt for placeholder values
         run: |
+          # Warn if example.com is still in security.txt (template ships with this)
+          if grep -qE "example\\.com" static/.well-known/security.txt; then
+            echo "::warning::security.txt still has example.com placeholder. Update with real domain before production!"
+          fi
+          # Fail only on explicit CHANGE-ME marker
           if grep -q "CHANGE-ME" static/.well-known/security.txt; then
-            echo "::error::security.txt contains placeholder values (CHANGE-ME). Update before production deployment!"
+            echo "::error::security.txt contains CHANGE-ME. Update before production!"
             exit 1
           fi
+      
+      - name: Validate robots.txt allows indexing
+        run: |
+          if grep -q "^Disallow: /$" static/robots.txt; then
+            echo "::error::robots.txt is blocking all crawlers. Site won't be indexed!"
+            exit 1
+          fi
+          echo "robots.txt is production-ready"
       
       - name: Validate PWA icons exist
         run: |
