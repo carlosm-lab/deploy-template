@@ -113,10 +113,13 @@ if not SECRET_KEY:
             "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
         )
     else:
-        # Development only: Generate temporary key with warning
-        SECRET_KEY = secrets.token_hex(32)
+        # Development only: Generate deterministic key based on working directory
+        # This prevents session invalidation on restart while keeping dev simple
+        import hashlib
+        dev_seed = os.path.abspath(os.getcwd()).encode()
+        SECRET_KEY = hashlib.sha256(dev_seed + b'dev-only-key').hexdigest()
         logger.warning(
-            "SECRET_KEY not configured. Using temporary key for development.",
+            "SECRET_KEY not configured. Using deterministic dev key (NOT for production).",
             extra={"security": "warning", "component": "config"}
         )
 
@@ -154,12 +157,18 @@ if ENABLE_RATE_LIMIT or IS_DEVELOPMENT:
         """Apply rate limit decorator."""
         return limiter.limit(limit_string)
 else:
-    # No-op decorator for production without explicit rate limiting
+    # No-op decorator for production - rate limiting handled by Edge middleware
     def rate_limit(limit_string):
         def decorator(f):
             return f
         return decorator
     limiter = None
+    
+    # Log that rate limiting is delegated to Edge middleware
+    logger.info(
+        "Flask rate limiting disabled. Using Edge middleware (middleware.js) for production.",
+        extra={"component": "security", "production": True}
+    )
 
 
 # =============================================================================
@@ -247,16 +256,9 @@ def health():
     Health check endpoint for monitoring.
     Protected by optional HEALTH_CHECK_TOKEN environment variable.
     
-    Timestamp is rounded to minute precision for security (prevents timing attacks).
+    Returns minimal information to prevent information disclosure.
     """
-    now = datetime.now(timezone.utc)
-    # Round to minute precision for security
-    timestamp = now.replace(second=0, microsecond=0).isoformat()
-    
-    return {
-        'status': 'ok',
-        'timestamp': timestamp
-    }
+    return {'status': 'ok'}
 
 
 @app.route('/status')
@@ -305,21 +307,24 @@ def ratelimit_handler(error):
 @app.errorhandler(500)
 def internal_error(error):
     """Custom 500 error page."""
-    # Log with correlation ID and full traceback for debugging
+    # Log with correlation ID for debugging
     error_id = g.get('request_id', 'unknown')
     
-    # Capture exception info if available (not exposed to client)
-    exc_info = traceback.format_exc()
+    # Build log extra data - sanitize in production
+    log_extra = {
+        "error_type": "internal",
+        "error_id": error_id,
+        "exception_type": type(error).__name__,
+    }
     
-    logger.error(
-        f"Internal server error (ref: {error_id})",
-        extra={
-            "error_type": "internal",
-            "error_id": error_id,
-            "exception": str(error),
-            "traceback": exc_info if exc_info != 'NoneType: None\n' else None
-        }
-    )
+    # Only include full traceback in development (security: prevent info disclosure)
+    if IS_DEVELOPMENT:
+        exc_info = traceback.format_exc()
+        if exc_info != 'NoneType: None\n':
+            log_extra["traceback"] = exc_info
+            log_extra["exception"] = str(error)
+    
+    logger.error(f"Internal server error (ref: {error_id})", extra=log_extra)
     return render_template('errors/500.html'), 500
 
 
@@ -333,11 +338,20 @@ def internal_error(error):
 # Entry Point
 # =============================================================================
 if __name__ == '__main__':
-    debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    # SECURITY: Never allow debug mode in production, regardless of env var
+    debug_requested = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    debug_mode = IS_DEVELOPMENT and debug_requested
     port = int(os.environ.get('PORT', 5000))
     
+    # Log security warning if debug was requested in production
+    if IS_PRODUCTION and debug_requested:
+        logger.error(
+            "FLASK_DEBUG=true IGNORED in production for security. Debug mode blocked.",
+            extra={"security": "blocked", "component": "config"}
+        )
+    
     if debug_mode:
-        logger.info("Starting in DEBUG mode", extra={"mode": "debug"})
+        logger.info("Starting in DEBUG mode (development only)", extra={"mode": "debug"})
         app.run(debug=True, host='127.0.0.1', port=port)
     else:
         logger.info("Starting in PRODUCTION mode", extra={"mode": "production"})

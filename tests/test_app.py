@@ -54,23 +54,22 @@ class TestRoutes:
         assert response.content_type == 'application/json'
 
     def test_healthz_endpoint_has_required_fields(self, client):
-        """El endpoint /healthz debe tener campos requeridos."""
+        """El endpoint /healthz debe tener solo status (no timestamp por seguridad)."""
         response = client.get('/healthz')
         data = response.get_json()
         assert 'status' in data
-        assert 'timestamp' in data
         assert data['status'] == 'ok'
+        # SECURITY: timestamp fue removido para prevenir information disclosure
+        assert 'timestamp' not in data
 
-    def test_healthz_timestamp_rounded_to_minute(self, client):
-        """El timestamp debe estar redondeado a minutos (sin segundos)."""
+    def test_healthz_minimal_response(self, client):
+        """El healthz debe retornar respuesta mínima (solo status)."""
         response = client.get('/healthz')
         data = response.get_json()
-        timestamp = data['timestamp']
-        # Format should be YYYY-MM-DDTHH:MM:00+00:00 (seconds = 00)
-        assert 'T' in timestamp
-        # Check that seconds are zeroed out
-        time_part = timestamp.split('T')[1]
-        assert ':00+' in time_part or ':00Z' in time_part or time_part.endswith(':00')
+        # Solo debe tener 'status', nada más
+        assert len(data) == 1
+        assert data == {'status': 'ok'}
+
 
     def test_status_redirects_to_healthz(self, client):
         """El endpoint /status debe redirigir a /healthz con 301."""
@@ -251,3 +250,47 @@ class TestRateLimiting:
         # In development, limiter should exist
         if IS_DEVELOPMENT:
             assert limiter is not None
+
+
+# ==============================================================================
+# Tests de Escenarios de Error y Edge Cases
+# ==============================================================================
+class TestErrorScenarios:
+    """Tests para escenarios de error, edge cases y seguridad."""
+
+    def test_malformed_request_id_rejected(self, client):
+        """Request IDs con caracteres peligrosos deben ser rechazados."""
+        # Intento de inyección de log
+        response = client.get('/', headers={'X-Request-ID': '<script>alert(1)</script>'})
+        returned_id = response.headers.get('X-Request-ID', '')
+        # El ID malicioso no debe ser usado
+        assert '<script>' not in returned_id
+        assert 'alert' not in returned_id
+
+    def test_very_long_request_id_truncated(self, client):
+        """Request IDs muy largos deben ser truncados a 36 caracteres."""
+        long_id = 'a' * 100
+        response = client.get('/', headers={'X-Request-ID': long_id})
+        returned_id = response.headers.get('X-Request-ID', '')
+        assert len(returned_id) <= 36
+
+    def test_healthz_no_timestamp_exposed(self, client):
+        """Health endpoint no debe exponer timestamp (información sensible)."""
+        response = client.get('/healthz')
+        data = response.get_json()
+        assert 'timestamp' not in data
+        assert 'status' in data
+        assert data['status'] == 'ok'
+
+    def test_404_returns_html(self, client):
+        """Página 404 debe retornar HTML, no JSON."""
+        response = client.get('/nonexistent-xyz-page')
+        assert response.status_code == 404
+        assert response.content_type.startswith('text/html')
+
+    def test_request_id_alphanumeric_valid(self, client):
+        """Request IDs alfanuméricos válidos deben ser preservados."""
+        valid_id = 'abc-123-DEF'
+        response = client.get('/', headers={'X-Request-ID': valid_id})
+        assert response.headers['X-Request-ID'] == valid_id
+

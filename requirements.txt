@@ -3,18 +3,19 @@
 # =============================================================================
 # Run: pip install -r requirements.txt
 # Audit: pip-audit
+# Last updated: 2026-01-20
 # =============================================================================
 
 # Core Framework
-Flask==3.0.0
+Flask==3.0.3
 Werkzeug==3.1.5
 Jinja2==3.1.6
 
 # Security & Forms
-flask-wtf==1.2.1
+flask-wtf==1.2.2
 
 # Rate Limiting (optional, for local development)
-flask-limiter==3.5.0
+flask-limiter==3.8.0
 
 # Configuration
-python-dotenv==1.0.0
+python-dotenv==1.0.1
