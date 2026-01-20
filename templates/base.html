@@ -52,6 +52,21 @@
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
+    <!-- Service Worker Registration (M12: PWA support) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(function (registration) {
+                        console.log('SW registered:', registration.scope);
+                    })
+                    .catch(function (error) {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+
     {% block extra_scripts %}{% endblock %}
 </body>
 

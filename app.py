@@ -52,12 +52,25 @@ class JSONFormatter(logging.Formatter):
         return json.dumps(log_record)
 
 
-# Configure logging with configurable level
-LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO').upper()
+# Configure logging with configurable level (M5: validated input)
+LOG_LEVEL_RAW = os.environ.get('LOG_LEVEL', 'INFO').upper()
+VALID_LOG_LEVELS = {'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'}
+if LOG_LEVEL_RAW not in VALID_LOG_LEVELS:
+    LOG_LEVEL = 'INFO'
+else:
+    LOG_LEVEL = LOG_LEVEL_RAW
+
 handler = logging.StreamHandler()
 handler.setFormatter(JSONFormatter())
-logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO), handlers=[handler])
+logging.basicConfig(level=getattr(logging, LOG_LEVEL), handlers=[handler])
 logger = logging.getLogger(__name__)
+
+# Warn if invalid LOG_LEVEL was provided
+if LOG_LEVEL_RAW not in VALID_LOG_LEVELS:
+    logger.warning(
+        f"Invalid LOG_LEVEL '{LOG_LEVEL_RAW}' ignored, using INFO",
+        extra={"component": "config", "provided_value": LOG_LEVEL_RAW}
+    )
 
 
 # =============================================================================
@@ -197,7 +210,8 @@ def before_request():
     if user_request_id and REQUEST_ID_PATTERN.match(user_request_id):
         g.request_id = user_request_id[:36]
     else:
-        g.request_id = str(uuid.uuid4())[:8]
+        # M8: Increased from 8 to 12 chars to reduce collision risk
+        g.request_id = str(uuid.uuid4()).replace('-', '')[:12]
     g.request_start = datetime.now(timezone.utc)
 
 
@@ -206,6 +220,18 @@ def after_request(response):
     """Add security headers and request correlation."""
     # Add request ID to response for tracing
     response.headers['X-Request-ID'] = g.request_id
+    
+    # A2: Security headers for dev/prod parity (Vercel adds these too, but this ensures local dev matches)
+    # Only add if not already present (allows Vercel to override)
+    security_headers = {
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
+    }
+    for header, value in security_headers.items():
+        if header not in response.headers:
+            response.headers[header] = value
     
     # Log request completion
     duration_ms = (datetime.now(timezone.utc) - g.request_start).total_seconds() * 1000
@@ -271,8 +297,36 @@ def status():
 
 
 # =============================================================================
+# Development-Only Routes (A5: for testing error handlers)
+# =============================================================================
+if IS_DEVELOPMENT:
+    @app.route('/test-error')
+    def test_error():
+        """
+        Development-only endpoint to test 500 error handling.
+        NOT available in production.
+        """
+        raise RuntimeError("Intentional test error for 500 handler verification")
+
+
+
+# =============================================================================
 # Error Handlers
 # =============================================================================
+@app.errorhandler(403)
+def forbidden_error(error):
+    """Custom 403 error page (M4: added missing handler)."""
+    logger.warning(
+        "Forbidden access attempt",
+        extra={
+            "path": request.path,
+            "ip": anonymize_ip(request.remote_addr),
+            "error_type": "forbidden"
+        }
+    )
+    return render_template('errors/403.html'), 403
+
+
 @app.errorhandler(404)
 def not_found_error(error):
     """Custom 404 error page."""

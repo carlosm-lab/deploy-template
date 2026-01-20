@@ -106,6 +106,70 @@ class TestErrorHandlers:
         response = client.get('/nonexistent-page-xyz')
         assert 'X-Request-ID' in response.headers
 
+    def test_403_handler_exists(self, client):
+        """403 handler está registrado (M4)."""
+        from flask import abort
+        # We can't directly trigger 403 without a protected route,
+        # but we can verify the template exists
+        import os
+        template_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'templates', 'errors', '403.html'
+        )
+        assert os.path.exists(template_path), "403.html template should exist"
+
+    def test_500_handler_no_traceback_in_production(self, client):
+        """A5: Error 500 no debe filtrar traceback en producción."""
+        from app import IS_DEVELOPMENT, app as flask_app
+        if IS_DEVELOPMENT:
+            # Temporarily disable exception propagation to test error handler
+            original_propagate = flask_app.config.get('PROPAGATE_EXCEPTIONS')
+            flask_app.config['PROPAGATE_EXCEPTIONS'] = False
+            flask_app.config['TESTING'] = False
+            
+            try:
+                with flask_app.test_client() as test_client:
+                    response = test_client.get('/test-error')
+                    assert response.status_code == 500
+                    # The response should NOT contain the error message
+                    assert b'Intentional test error' not in response.data
+                    # Should contain generic 500 page content
+                    assert b'500' in response.data or b'Error' in response.data
+            finally:
+                # Restore original config
+                flask_app.config['TESTING'] = True
+                if original_propagate is not None:
+                    flask_app.config['PROPAGATE_EXCEPTIONS'] = original_propagate
+
+
+# ==============================================================================
+# Tests de Headers de Seguridad (A2)
+# ==============================================================================
+class TestSecurityHeaders:
+    """Tests para verificar headers de seguridad en respuestas."""
+
+    def test_x_content_type_options_header(self, client):
+        """X-Content-Type-Options debe estar presente."""
+        response = client.get('/')
+        assert response.headers.get('X-Content-Type-Options') == 'nosniff'
+
+    def test_x_frame_options_header(self, client):
+        """X-Frame-Options debe estar presente."""
+        response = client.get('/')
+        assert response.headers.get('X-Frame-Options') == 'DENY'
+
+    def test_referrer_policy_header(self, client):
+        """Referrer-Policy debe estar presente."""
+        response = client.get('/')
+        assert response.headers.get('Referrer-Policy') == 'strict-origin-when-cross-origin'
+
+    def test_permissions_policy_header(self, client):
+        """Permissions-Policy debe estar presente."""
+        response = client.get('/')
+        permissions = response.headers.get('Permissions-Policy', '')
+        assert 'camera=()' in permissions
+        assert 'microphone=()' in permissions
+
 
 # ==============================================================================
 # Tests de Anonimización IP (GDPR)

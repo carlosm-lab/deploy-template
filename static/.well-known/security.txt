@@ -1,19 +1,21 @@
-# =============================================================================
+# ==============================================================================
 # Security Policy - Deploy Template
-# =============================================================================
+# ==============================================================================
 # https://securitytxt.org/
 # RFC 9116 Compliant
-# =============================================================================
-
-# IMPORTANTE: Actualizar estos valores antes de producción
-# TODO: Cambiar CHANGE-ME por valores reales antes de deploy
+# ==============================================================================
+#
+# ⚠️  CRITICAL: You MUST update this file before production deployment!
+#     CI will FAIL if placeholder values remain.
+#
+# Checklist pre-producción:
+# - [ ] Actualizar email de contacto (línea Contact:)
+# - [ ] Actualizar URL canónica con dominio real (línea Canonical:)
+# - [ ] Actualizar fecha de expiración anualmente (línea Expires:)
+#
+# ==============================================================================
 
 Contact: mailto:CHANGE-ME@example.com
 Expires: 2027-01-20T00:00:00.000Z
 Preferred-Languages: es, en
 Canonical: https://CHANGE-ME.vercel.app/.well-known/security.txt
-
-# Checklist pre-producción:
-# [ ] Actualizar email de contacto
-# [ ] Actualizar URL canónica con dominio real
-# [ ] Actualizar fecha de expiración anualmente

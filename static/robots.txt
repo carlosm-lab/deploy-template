@@ -1,11 +1,19 @@
 # robots.txt - Deploy Template
 # https://www.robotstxt.org/
 
-# Sitio en construcción - bloquear todos los crawlers
+# =============================================================================
+# CURRENT STATUS: Site Under Construction
+# =============================================================================
+# This site is in development and should NOT be indexed by search engines.
+# The sitemap.xml is a placeholder that will be populated when ready.
+#
+# ⚠️  BEFORE PRODUCTION: Change Disallow: / to Allow: / and uncomment Sitemap
+# =============================================================================
+
 User-agent: *
 Disallow: /
 
-# Cuando el sitio esté listo, cambiar a:
+# When the site is ready for production, change to:
 # User-agent: *
 # Allow: /
-# Sitemap: https://tu-dominio.com/sitemap.xml
+# Sitemap: https://your-domain.com/sitemap.xml

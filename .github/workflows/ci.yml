@@ -1,7 +1,7 @@
 # =============================================================================
 # CI/CD Pipeline - Flask Deploy Template
 # =============================================================================
-# Runs tests and security audit on every push/PR
+# Runs tests, security audit, and validation checks on every push/PR
 # =============================================================================
 
 name: CI
@@ -38,6 +38,37 @@ jobs:
         run: pip-audit --strict
         continue-on-error: false
       
+      # M9: Made flake8 blocking (was continue-on-error: true)
       - name: Lint check (flake8)
-        run: flake8 app.py --max-line-length=120 --ignore=E501
-        continue-on-error: true
+        run: flake8 app.py --max-line-length=120 --ignore=E501,W503
+        continue-on-error: false
+
+  # C4: Check for placeholder values that must be updated before production
+  validate-production-readiness:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check security.txt for placeholders
+        run: |
+          if grep -q "CHANGE-ME" static/.well-known/security.txt; then
+            echo "::error::security.txt contains placeholder values (CHANGE-ME). Update before production deployment!"
+            exit 1
+          fi
+      
+      - name: Validate PWA icons exist
+        run: |
+          for icon in "static/icons/icon-192.png" "static/icons/icon-512.png" "static/favicon.svg"; do
+            if [ ! -f "$icon" ]; then
+              echo "::error::Missing PWA icon: $icon"
+              exit 1
+            fi
+          done
+          echo "All PWA icons present"
+      
+      - name: Validate manifest.json
+        run: |
+          python -c "import json; json.load(open('static/manifest.json'))"
+          echo "manifest.json is valid JSON"
