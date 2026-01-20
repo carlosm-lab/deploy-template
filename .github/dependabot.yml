@@ -1,0 +1,40 @@
+# =============================================================================
+# Dependabot Configuration
+# =============================================================================
+# Mantiene dependencias actualizadas automáticamente
+# Docs: https://docs.github.com/en/code-security/dependabot
+# =============================================================================
+
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "chore(deps):"
+    # Agrupar actualizaciones menores para reducir ruido
+    groups:
+      python-minor:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions (si se agregan en el futuro)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci"

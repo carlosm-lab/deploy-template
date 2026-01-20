@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>{% block title %}Sitio en Construcción{% endblock %}</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="{% block meta_description %}Estamos construyendo algo increíble. Nuestro sitio estará disponible muy pronto.{% endblock %}" />
+    <!-- Aligned with robots.txt: noindex while under construction -->
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{% block og_title %}Sitio en Construcción{% endblock %}" />
+    <meta property="og:description"
+        content="Estamos construyendo algo increíble. Nuestro sitio estará disponible muy pronto." />
+    <meta property="og:locale" content="es_ES" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Sitio en Construcción" />
+    <meta name="twitter:description"
+        content="Estamos construyendo algo increíble. Nuestro sitio estará disponible muy pronto." />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
+    <meta name="theme-color" content="#3b82f6" />
+
+    <!-- Fonts (Local - CSP compliant) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}" />
+
+    <!-- Material Symbols (inline fallback for CSP) -->
+    <style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined', sans-serif;
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+
+    <!-- Tailwind CSS (compilado localmente) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}" />
+
+    <!-- Custom CSS (includes font fallback) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="font-sans min-h-screen flex flex-col overflow-x-hidden text-slate-700">
+    {% block content %}{% endblock %}
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

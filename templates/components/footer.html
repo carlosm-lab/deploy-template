@@ -1,0 +1,11 @@
+<!-- Footer -->
+{# Copyright is configurable via site_name variable, defaults to VercelDeploy #}
+{% set site_name = config.get('SITE_NAME', 'VercelDeploy') if config else 'VercelDeploy' %}
+<footer class="w-full py-8 flex justify-center z-10 relative">
+    <div class="flex flex-col items-center gap-4">
+        <!-- Copyright -->
+        <p class="text-[10px] text-slate-400 font-medium tracking-wide">
+            © {{ current_year }} {{ site_name }}. Todos los derechos reservados.
+        </p>
+    </div>
+</footer>

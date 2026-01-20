@@ -1,0 +1,59 @@
+/**
+ * Local Fonts - Inter
+ * Downloaded from Google Fonts for CSP compliance
+ * Eliminates external dependency on fonts.googleapis.com
+ */
+
+/* Inter 300 - Light */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url('/static/fonts/inter-300.ttf') format('truetype');
+}
+
+/* Inter 400 - Regular */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/static/fonts/inter-400.ttf') format('truetype');
+}
+
+/* Inter 500 - Medium */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/static/fonts/inter-500.ttf') format('truetype');
+}
+
+/* Inter 600 - SemiBold */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/static/fonts/inter-600.ttf') format('truetype');
+}
+
+/* Inter 700 - Bold */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/static/fonts/inter-700.ttf') format('truetype');
+}
+
+/* Inter 800 - ExtraBold */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url('/static/fonts/inter-800.ttf') format('truetype');
+}

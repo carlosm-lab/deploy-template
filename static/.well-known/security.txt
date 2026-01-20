@@ -1,0 +1,14 @@
+# =============================================================================
+# Security Policy - Deploy Template
+# =============================================================================
+# https://securitytxt.org/
+# =============================================================================
+
+Contact: mailto:security@example.com
+Expires: 2027-01-20T00:00:00.000Z
+Preferred-Languages: es, en
+Canonical: https://example.com/.well-known/security.txt
+
+# Actualizar el email de contacto antes de producción
+# Actualizar Expires anualmente
+# Actualizar Canonical con el dominio real

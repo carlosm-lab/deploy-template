@@ -1,0 +1,20 @@
+{
+    "name": "Deploy Template",
+    "short_name": "Deploy",
+    "description": "Sitio en construcción",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#3b82f6",
+    "icons": [
+        {
+            "src": "/static/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "lang": "es",
+    "orientation": "portrait-primary"
+}

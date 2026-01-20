@@ -1,0 +1,11 @@
+# robots.txt - Deploy Template
+# https://www.robotstxt.org/
+
+# Sitio en construcción - bloquear todos los crawlers
+User-agent: *
+Disallow: /
+
+# Cuando el sitio esté listo, cambiar a:
+# User-agent: *
+# Allow: /
+# Sitemap: https://tu-dominio.com/sitemap.xml

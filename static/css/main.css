@@ -1,0 +1,159 @@
+/**
+ * Main Stylesheet - Under Construction Template
+ * Estilos personalizados que complementan Tailwind CSS
+ */
+
+/* ======================================
+   1. Base Styles
+   ====================================== */
+
+body {
+    background: radial-gradient(circle at center top, #f8fafc, #cbd5e1);
+}
+
+/* Font Fallback Strategy - moved from inline style */
+.font-sans {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+                 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 
+                 'Segoe UI Emoji', 'Segoe UI Symbol';
+}
+
+/* ======================================
+   2. Typography
+   ====================================== */
+
+.text-metallic {
+    background: linear-gradient(to bottom, #334155, #64748B);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ======================================
+   3. Glass & 3D Effects
+   ====================================== */
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.metal-shadow {
+    box-shadow: 
+        inset 2px 2px 5px rgba(255, 255, 255, 0.8),
+        inset -2px -2px 5px rgba(0, 0, 0, 0.2),
+        5px 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* ======================================
+   4. Progress Bar Stripes
+   ====================================== */
+
+.progress-stripes {
+    background: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.2) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.2) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 1rem 1rem;
+    animation: stripes-move 3s linear infinite reverse;
+}
+
+/* ======================================
+   5. Animations
+   ====================================== */
+
+/* Float 3D Animation */
+@keyframes float-3d {
+    0%, 100% { 
+        transform: translateY(0) rotateX(0) rotateY(0); 
+    }
+    50% { 
+        transform: translateY(-15px) rotateX(2deg) rotateY(-2deg); 
+    }
+}
+
+/* Gear Spin Animation */
+@keyframes gear-spin-slow {
+    from { 
+        transform: rotate(0deg); 
+    }
+    to { 
+        transform: rotate(360deg); 
+    }
+}
+
+/* Arm Pivot Animation */
+@keyframes arm-pivot {
+    0%, 100% { 
+        transform: rotate(0deg); 
+    }
+    50% { 
+        transform: rotate(-25deg); 
+    }
+}
+
+/* Eye Blink Animation */
+@keyframes eye-blink {
+    0%, 45%, 55%, 100% { 
+        transform: scaleY(1); 
+        opacity: 1; 
+    }
+    50% { 
+        transform: scaleY(0.1); 
+        opacity: 0.8; 
+    }
+}
+
+/* Float Shadow Animation */
+@keyframes float-shadow {
+    0%, 100% {
+        transform: translateX(-50%) scale(1);
+        opacity: 0.1;
+    }
+    50% {
+        transform: translateX(-50%) scale(0.8);
+        opacity: 0.05;
+    }
+}
+
+/* Stripes Movement */
+@keyframes stripes-move {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 1rem 0;
+    }
+}
+
+/* ======================================
+   6. Responsive Adjustments
+   ====================================== */
+
+@media (max-width: 768px) {
+    .glass-panel {
+        margin: 1rem;
+    }
+}
+
+/* ======================================
+   7. Custom Utilities
+   ====================================== */
+
+/* Steel gradient background */
+.bg-steel-gradient {
+    background: linear-gradient(135deg, #cbd5e1 0%, #f1f5f9 50%, #94a3b8 100%);
+}
+
+/* Gold gradient background */
+.bg-gold-gradient {
+    background: linear-gradient(135deg, #fcd34d 0%, #fef3c7 50%, #d97706 100%);
+}

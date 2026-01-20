@@ -1,0 +1,21 @@
+# =============================================================================
+# Development Dependencies - Flask Deploy Template
+# =============================================================================
+# Install with: pip install -r requirements-dev.txt
+# =============================================================================
+
+# Include production dependencies
+-r requirements.txt
+
+# Production Server (for non-Vercel deployments)
+gunicorn==22.0.0
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+
+# Security Auditing
+pip-audit==2.6.1
+
+# Linting (optional)
+flake8==6.1.0
