@@ -194,7 +194,8 @@ else:
 def inject_globals():
     """Inject global variables into all templates."""
     return {
-        'current_year': datetime.now(timezone.utc).year
+        'current_year': datetime.now(timezone.utc).year,
+        'site_name': os.environ.get('SITE_NAME', 'VercelDeploy'),
     }
 
 
@@ -233,8 +234,8 @@ def after_request(response):
         'Permissions-Policy': 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
         # CSP matches vercel.json for dev/prod parity
         'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self';",
-        # HSTS - 1 year with preload
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+        # HSTS - 1 year (preload removed until domain is registered at hstspreload.org)
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
     }
     for header, value in security_headers.items():
         if header not in response.headers:

@@ -9,7 +9,7 @@
  * =============================================================================
  */
 
-const CACHE_NAME = 'deploy-template-v2';
+const CACHE_NAME = 'deploy-template-v3';
 
 // Only cache truly static assets - NOT dynamic routes like '/'
 const STATIC_ASSETS = [
@@ -20,6 +20,7 @@ const STATIC_ASSETS = [
     '/static/js/sw-register.js',
     '/static/favicon.svg',
     '/static/manifest.json',
+    '/static/offline.html',
 ];
 
 // Install event - cache static assets only

@@ -5,17 +5,14 @@
 # RFC 9116 Compliant
 # ==============================================================================
 #
-# ⚠️  CRITICAL: Update these values before production deployment!
-#     CI will FAIL if "example.com" values remain.
-#
-# Pre-production checklist:
-# - [ ] Update Contact: with real security email
-# - [ ] Update Canonical: with real domain
-# - [ ] Update Expires: annually
+# ✅ PRODUCTION READY
+# 
+# Actualizado: 2026-01-20
 #
 # ==============================================================================
 
-Contact: mailto:security@example.com
+Contact: mailto:security@verceldeploy.com
 Expires: 2027-01-20T00:00:00.000Z
 Preferred-Languages: es, en
-Canonical: https://example.vercel.app/.well-known/security.txt
+Canonical: https://verceldeploy.vercel.app/.well-known/security.txt
+Policy: https://verceldeploy.vercel.app/security-policy

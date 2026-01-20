@@ -1,12 +1,19 @@
 {
-    "name": "Deploy Template",
-    "short_name": "Deploy",
-    "description": "Sitio en construcción",
+    "name": "VercelDeploy Template",
+    "short_name": "VDeploy",
+    "description": "Plantilla profesional para pre-despliegue en Vercel",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",
     "background_color": "#f8fafc",
     "theme_color": "#3b82f6",
+    "orientation": "portrait-primary",
+    "lang": "es",
+    "categories": [
+        "utilities",
+        "productivity",
+        "developer tools"
+    ],
     "icons": [
         {
             "src": "/static/favicon.svg",
@@ -27,6 +34,29 @@
             "purpose": "any maskable"
         }
     ],
-    "lang": "es",
-    "orientation": "portrait-primary"
+    "screenshots": [
+        {
+            "src": "/static/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Página principal en construcción"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Estado del Sistema",
+            "short_name": "Estado",
+            "description": "Ver estado de salud del sistema",
+            "url": "/healthz",
+            "icons": [
+                {
+                    "src": "/static/favicon.svg",
+                    "sizes": "any"
+                }
+            ]
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false
 }

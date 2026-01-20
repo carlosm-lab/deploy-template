@@ -101,9 +101,10 @@ node_modules/
 *.pyc
 
 # ------------------------------------------------------------------------------
-# Large Files (use Git LFS for new large assets)
+# Large Files (use Git LFS for large assets)
 # ------------------------------------------------------------------------------
 # Ignore large images in root (documentation screenshots)
-# Keep existing screen.png but ignore new ones
 *.png
 !static/**/*.png
+# Specifically ignore screen.png (912KB)
+screen.png

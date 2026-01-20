@@ -10,6 +10,5 @@
 User-agent: *
 Allow: /
 
-# Sitemap location (update domain when deployed)
-Sitemap: https://example.vercel.app/static/sitemap.xml
-
+# Sitemap location
+Sitemap: https://verceldeploy.vercel.app/static/sitemap.xml

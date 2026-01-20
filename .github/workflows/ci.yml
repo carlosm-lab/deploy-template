@@ -20,10 +20,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: 'pip'
       
       - name: Install dependencies
@@ -51,17 +51,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check security.txt for placeholder values
+      - name: Check security.txt for placeholder values (BLOCKING)
         run: |
-          # Warn if example.com is still in security.txt (template ships with this)
-          if grep -qE "example\\.com" static/.well-known/security.txt; then
-            echo "::warning::security.txt still has example.com placeholder. Update with real domain before production!"
+          # BLOCK if example.com or example.vercel.app is still in production files
+          if grep -qE "example\\.com|example\\.vercel\\.app" static/.well-known/security.txt; then
+            echo "::error::security.txt contains placeholder domain (example.com). Update before production!"
+            exit 1
           fi
-          # Fail only on explicit CHANGE-ME marker
           if grep -q "CHANGE-ME" static/.well-known/security.txt; then
             echo "::error::security.txt contains CHANGE-ME. Update before production!"
             exit 1
           fi
+          echo "security.txt validated - no placeholders found"
       
       - name: Validate robots.txt allows indexing
         run: |
@@ -69,7 +70,19 @@ jobs:
             echo "::error::robots.txt is blocking all crawlers. Site won't be indexed!"
             exit 1
           fi
+          if grep -qE "example\\.com|example\\.vercel\\.app" static/robots.txt; then
+            echo "::error::robots.txt contains placeholder domain. Update before production!"
+            exit 1
+          fi
           echo "robots.txt is production-ready"
+      
+      - name: Validate sitemap.xml has no placeholders
+        run: |
+          if grep -qE "example\\.com|example\\.vercel\\.app" static/sitemap.xml; then
+            echo "::error::sitemap.xml contains placeholder domain. Update before production!"
+            exit 1
+          fi
+          echo "sitemap.xml is production-ready"
       
       - name: Validate PWA icons exist
         run: |

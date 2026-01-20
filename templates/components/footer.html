@@ -1,6 +1,6 @@
 <!-- Footer -->
-{# Copyright is configurable via site_name variable, defaults to VercelDeploy #}
-{% set site_name = config.get('SITE_NAME', 'VercelDeploy') if config else 'VercelDeploy' %}
+{# site_name inyectado desde context_processor, fallback seguro #}
+{% set site_name = site_name|default('VercelDeploy') %}
 <footer class="w-full py-8 flex justify-center z-10 relative">
     <div class="flex flex-col items-center gap-4">
         <!-- Copyright -->

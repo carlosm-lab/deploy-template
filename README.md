@@ -14,6 +14,7 @@ Plantilla profesional para pre-desplegar en Vercel y reservar dominios.
 - ✅ Manejo de errores sin filtrar información (con ID de referencia)
 - ✅ CSRF preparado para formularios futuros
 - ✅ PWA con Service Worker (Network-First para contenido dinámico)
+- ✅ Página offline.html para PWA
 
 ## Rate Limiting en Producción
 
@@ -36,17 +37,19 @@ deploy/
 ├── app.py               # Aplicación Flask
 ├── requirements.txt     # Dependencias producción
 ├── requirements-dev.txt # Dependencias desarrollo
-├── runtime.txt          # Versión Python para Vercel
+├── runtime.txt          # Versión Python para Vercel (3.12)
 ├── vercel.json          # Configuración Vercel + headers
+├── SECURITY.md          # Documentación de seguridad
 ├── static/
 │   ├── css/             # Estilos (Tailwind + custom)
 │   ├── js/main.js       # JavaScript
 │   ├── manifest.json    # PWA manifest
+│   ├── offline.html     # Página offline PWA
 │   └── favicon.svg      # Icono
 └── templates/
     ├── base.html        # Plantilla base
     ├── index.html       # Página principal
-    └── errors/          # Páginas 404/500
+    └── errors/          # Páginas 403/404/500
 ```
 
 ## Variables de Entorno
@@ -58,6 +61,7 @@ deploy/
 | `FLASK_DEBUG` | ❌ No | Modo debug (default: false) |
 | `LOG_LEVEL` | ❌ No | Nivel de logging (default: INFO) |
 | `ENABLE_RATE_LIMIT` | ❌ No | Forzar rate limit en producción |
+| `SITE_NAME` | ❌ No | Nombre del sitio (default: VercelDeploy) |
 
 ### Generar SECRET_KEY
 
@@ -102,6 +106,9 @@ vercel
 # Ejecutar tests
 pytest tests/ -v
 
+# Con coverage
+pytest tests/ -v --cov=app --cov-report=term-missing
+
 # Auditoría de dependencias
 pip-audit
 ```
@@ -123,10 +130,20 @@ pip-audit
 - [x] **robots.txt**: Configurado con `Allow: /` ✅
 - [x] **meta robots**: Configurado con `index, follow` ✅
 - [x] **sitemap.xml**: Configurado con entrada válida ✅
+- [x] **security.txt**: Actualizado con dominio real ✅
+- [x] **offline.html**: Página PWA offline creada ✅
 - [ ] **SECRET_KEY**: Configurar en Vercel Dashboard (obligatorio)
-- [ ] **security.txt**: Actualizar email y URL con dominio real
-- [ ] **Dominio**: Actualizar `example.vercel.app` en robots.txt, sitemap.xml, security.txt
 - [ ] **Rate Limiting**: Configurar en Vercel Dashboard > Security
+- [ ] **Dominio personalizado**: Actualizar URLs en sitemap, robots, security.txt
+
+---
+
+## Seguridad
+
+Ver [SECURITY.md](SECURITY.md) para documentación detallada sobre:
+- Content Security Policy (CSP) y cómo modificarlo
+- HSTS y proceso de preload
+- Rate limiting en producción
 
 ---
 

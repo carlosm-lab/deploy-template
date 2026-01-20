@@ -5,6 +5,13 @@
 # Audit: pip-audit
 # Last updated: 2026-01-20
 # =============================================================================
+#
+# A3: Para máxima seguridad, generar hashes con:
+# pip-compile requirements.in --generate-hashes -o requirements.txt
+#
+# Versiones sin hashes por simplicidad de template.
+# En producción crítica, usar pip-tools para hashes SHA256.
+# =============================================================================
 
 # Core Framework
 Flask==3.0.3
@@ -19,3 +26,8 @@ flask-limiter==3.8.0
 
 # Configuration
 python-dotenv==1.0.1
+
+# Note: Para supply chain security en producción:
+# 1. pip install pip-tools
+# 2. Crear requirements.in con nombres de paquetes
+# 3. pip-compile --generate-hashes requirements.in -o requirements.txt

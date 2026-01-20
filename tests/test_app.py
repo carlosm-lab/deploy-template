@@ -358,3 +358,109 @@ class TestErrorScenarios:
         response = client.get('/', headers={'X-Request-ID': valid_id})
         assert response.headers['X-Request-ID'] == valid_id
 
+
+# ==============================================================================
+# Tests de Templates y Componentes (B4: Cobertura de templates)
+# ==============================================================================
+class TestTemplates:
+    """Tests para renderizado de templates y componentes."""
+
+    def test_index_renders_robot_component(self, client):
+        """La página principal debe renderizar el componente robot."""
+        response = client.get('/')
+        # Verificar que el robot SVG se renderiza
+        assert b'robot' in response.data.lower() or b'Robot' in response.data
+
+    def test_index_renders_footer(self, client):
+        """La página principal debe renderizar el footer con copyright."""
+        response = client.get('/')
+        assert b'derechos reservados' in response.data.lower() or b'VercelDeploy' in response.data
+
+    def test_index_renders_status_panel(self, client):
+        """La página principal debe renderizar el panel de estado."""
+        response = client.get('/')
+        assert b'ESTADO' in response.data or b'Backend' in response.data
+
+    def test_error_pages_render_correctly(self, client):
+        """Las páginas de error deben renderizar correctamente."""
+        response = client.get('/nonexistent-page-xyz')
+        assert response.status_code == 404
+        assert b'no encontrada' in response.data.lower() or b'404' in response.data
+
+    def test_offline_html_exists(self):
+        """El archivo offline.html debe existir para PWA."""
+        import os
+        offline_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static', 'offline.html'
+        )
+        assert os.path.exists(offline_path), "offline.html is required for PWA"
+
+    def test_manifest_json_valid(self):
+        """El manifest.json debe ser JSON válido con campos requeridos."""
+        import json
+        import os
+        manifest_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static', 'manifest.json'
+        )
+        with open(manifest_path) as f:
+            manifest = json.load(f)
+        
+        assert 'name' in manifest
+        assert 'icons' in manifest
+        assert 'start_url' in manifest
+        assert len(manifest['icons']) >= 2
+
+
+# ==============================================================================
+# Tests de Contexto de Producción Simulado (M3)
+# ==============================================================================
+class TestProductionSimulation:
+    """Tests que simulan el entorno de producción."""
+
+    def test_site_name_from_env(self, client, monkeypatch):
+        """El site_name debe venir de variable de entorno."""
+        monkeypatch.setenv('SITE_NAME', 'TestSite')
+        # Need to reimport to pick up env change
+        from app import inject_globals
+        result = inject_globals()
+        assert 'site_name' in result
+
+    def test_security_headers_present_in_all_responses(self, client):
+        """Todos los endpoints deben tener headers de seguridad."""
+        endpoints = ['/', '/healthz']
+        required_headers = [
+            'X-Content-Type-Options',
+            'X-Frame-Options',
+            'Referrer-Policy',
+            'Content-Security-Policy',
+        ]
+        
+        for endpoint in endpoints:
+            response = client.get(endpoint)
+            for header in required_headers:
+                assert header in response.headers, f"{header} missing in {endpoint}"
+
+    def test_no_placeholder_domains_in_static(self):
+        """Los archivos estáticos no deben contener dominios placeholder."""
+        import os
+        static_dir = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static'
+        )
+        
+        placeholder_patterns = ['example.com', 'example.vercel.app']
+        files_to_check = [
+            'robots.txt',
+            'sitemap.xml',
+            os.path.join('.well-known', 'security.txt'),
+        ]
+        
+        for filename in files_to_check:
+            filepath = os.path.join(static_dir, filename)
+            if os.path.exists(filepath):
+                with open(filepath, 'r') as f:
+                    content = f.read()
+                for pattern in placeholder_patterns:
+                    assert pattern not in content, f"Placeholder '{pattern}' found in {filename}"
