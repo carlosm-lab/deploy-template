@@ -1,14 +1,5 @@
-# robots.txt - Deploy Template
-# https://www.robotstxt.org/
-
-# =============================================================================
-# Production Configuration
-# =============================================================================
-# All crawlers allowed, sitemap referenced
-# =============================================================================
-
+# robots.txt
 User-agent: *
 Allow: /
 
-# IMPORTANTE: Actualiza la URL del sitemap antes de producción
-# Sitemap: https://TU-DOMINIO.vercel.app/static/sitemap.xml
+Sitemap: https://deploy-liard-six.vercel.app/static/sitemap.xml

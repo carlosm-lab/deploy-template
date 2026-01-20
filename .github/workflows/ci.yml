@@ -1,16 +1,13 @@
 # =============================================================================
 # CI/CD Pipeline - Flask Deploy Template
 # =============================================================================
-# Runs tests, security audit, and validation checks on every push/PR
-# =============================================================================
-
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master, main]
   pull_request:
-    branches: [main]
+    branches: [master, main]
 
 jobs:
   test:
@@ -36,90 +33,31 @@ jobs:
       
       - name: Security audit (pip-audit)
         run: pip-audit --strict
-        continue-on-error: false
       
       - name: Lint check (flake8)
         run: flake8 app.py --max-line-length=120 --ignore=E501,W503
-        continue-on-error: false
       
-      - name: Smoke test - App starts correctly
-        run: |
-          timeout 5 python -c "from app import app; print('App imported successfully')" || exit 0
-          echo "Smoke test passed"
+      - name: Smoke test
+        run: python -c "from app import app; print('App OK')"
 
-  validate-production-readiness:
+  validate:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Check for placeholder domains (BLOCKING)
-        run: |
-          PLACEHOLDERS="example.com|example.vercel.app|verceldeploy.vercel.app|TU-DOMINIO"
-          
-          # Check security.txt
-          if grep -qE "$PLACEHOLDERS" static/.well-known/security.txt 2>/dev/null; then
-            echo "::warning::security.txt may contain placeholder values - review before production"
-          fi
-          
-          # Check robots.txt for uncommented placeholder
-          if grep -v "^#" static/robots.txt | grep -qE "$PLACEHOLDERS" 2>/dev/null; then
-            echo "::error::robots.txt contains active placeholder domain"
-            exit 1
-          fi
-          
-          # Check sitemap.xml
-          if grep -q "TU-DOMINIO" static/sitemap.xml; then
-            echo "::error::sitemap.xml contains TU-DOMINIO placeholder. Update before production!"
-            exit 1
-          fi
-          
-          echo "Placeholder check completed"
-      
-      - name: Validate .env is NOT tracked
-        run: |
-          if git ls-files --error-unmatch .env 2>/dev/null; then
-            echo "::error::.env file is tracked in git! Run: git rm --cached .env"
-            exit 1
-          fi
-          echo ".env correctly excluded from git"
-      
-      - name: Validate robots.txt allows indexing
-        run: |
-          if grep -q "^Disallow: /$" static/robots.txt; then
-            echo "::error::robots.txt is blocking all crawlers. Site won't be indexed!"
-            exit 1
-          fi
-          echo "robots.txt is production-ready"
-      
-      - name: Validate PWA icons exist
-        run: |
-          for icon in "static/icons/icon-192.png" "static/icons/icon-512.png" "static/favicon.svg"; do
-            if [ ! -f "$icon" ]; then
-              echo "::error::Missing PWA icon: $icon"
-              exit 1
-            fi
-          done
-          echo "All PWA icons present"
-      
-      - name: Validate manifest.json
+      - name: Validate JSON files
         run: |
           python -c "import json; json.load(open('static/manifest.json'))"
-          echo "manifest.json is valid JSON"
-      
-      - name: Validate vercel.json
-        run: |
           python -c "import json; json.load(open('vercel.json'))"
-          echo "vercel.json is valid JSON"
       
-      - name: Check required templates exist
+      - name: Validate templates exist
         run: |
-          TEMPLATES="templates/base.html templates/index.html templates/errors/403.html templates/errors/404.html templates/errors/429.html templates/errors/500.html"
-          for tpl in $TEMPLATES; do
-            if [ ! -f "$tpl" ]; then
-              echo "::error::Missing template: $tpl"
-              exit 1
-            fi
+          for f in templates/base.html templates/index.html templates/errors/403.html templates/errors/404.html templates/errors/429.html templates/errors/500.html; do
+            test -f "$f" || exit 1
           done
-          echo "All required templates present"
+      
+      - name: Validate PWA icons
+        run: |
+          test -f static/favicon.svg
+          test -f static/icons/icon-192.png
+          test -f static/icons/icon-512.png

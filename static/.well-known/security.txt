@@ -1,17 +1,4 @@
-# ==============================================================================
-# Security Policy - Deploy Template
-# ==============================================================================
-# https://securitytxt.org/
-# RFC 9116 Compliant
-# ==============================================================================
-
-Contact: https://github.com/YOUR-USERNAME/deploy/security/advisories/new
+Contact: https://github.com/Memory-Bank/deploy/security/advisories/new
 Expires: 2027-01-20T00:00:00.000Z
 Preferred-Languages: es, en
-
-# ==============================================================================
-# IMPORTANTE: Antes de producción, actualiza:
-# 1. Contact: URL de GitHub Security Advisories o email real
-# 2. Canonical: URL real de tu sitio
-# 3. Policy: URL de tu política de seguridad (si existe)
-# ==============================================================================
+Canonical: https://deploy-liard-six.vercel.app/.well-known/security.txt

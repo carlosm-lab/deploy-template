@@ -146,8 +146,8 @@ app.config['WTF_CSRF_ENABLED'] = True  # Prepared for future forms
 # =============================================================================
 # Rate Limiting Configuration
 # =============================================================================
-# Usa Redis (Upstash) en producción para rate limiting distribuido.
-# En desarrollo usa memoria local.
+# Siempre habilitado. Usa Redis si está disponible, memoria como fallback.
+# En serverless sin Redis, el límite es por invocación (limitado pero funcional).
 # =============================================================================
 
 from flask_limiter import Limiter
@@ -157,47 +157,36 @@ from flask_limiter.util import get_remote_address
 REDIS_URL = os.environ.get('REDIS_URL') or os.environ.get('UPSTASH_REDIS_REST_URL')
 
 if REDIS_URL:
-    # Producción: Redis distribuido (funciona en serverless)
     RATE_LIMIT_STORAGE = REDIS_URL
     logger.info(
-        "Rate limiting using Redis backend",
+        "Rate limiting: Redis backend",
         extra={"component": "security", "backend": "redis"}
     )
-elif IS_PRODUCTION:
-    # Producción SIN Redis: Deshabilitado con warning
-    RATE_LIMIT_STORAGE = None
-    logger.warning(
-        "REDIS_URL not configured. Rate limiting DISABLED in production. "
-        "Configure Upstash Redis or Vercel Firewall for protection.",
-        extra={"component": "security", "risk": "high"}
-    )
 else:
-    # Desarrollo: Memoria local
+    # Fallback a memoria - funciona en desarrollo, limitado en serverless
     RATE_LIMIT_STORAGE = "memory://"
-    logger.info(
-        "Rate limiting using memory backend (development only)",
-        extra={"component": "security", "backend": "memory"}
-    )
+    if IS_PRODUCTION:
+        logger.warning(
+            "Rate limiting: memory backend (limited in serverless). Configure REDIS_URL for distributed limiting.",
+            extra={"component": "security", "backend": "memory", "risk": "medium"}
+        )
+    else:
+        logger.info(
+            "Rate limiting: memory backend",
+            extra={"component": "security", "backend": "memory"}
+        )
 
-# Inicializar limiter solo si tenemos storage
-if RATE_LIMIT_STORAGE:
-    limiter = Limiter(
-        key_func=get_remote_address,
-        app=app,
-        default_limits=["200 per day", "50 per hour"],
-        storage_uri=RATE_LIMIT_STORAGE,
-    )
-    
-    def rate_limit(limit_string):
-        """Apply rate limit decorator."""
-        return limiter.limit(limit_string)
-else:
-    # No-op decorator cuando no hay storage
-    def rate_limit(limit_string):
-        def decorator(f):
-            return f
-        return decorator
-    limiter = None
+# Siempre inicializar limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=RATE_LIMIT_STORAGE,
+)
+
+def rate_limit(limit_string):
+    """Apply rate limit decorator."""
+    return limiter.limit(limit_string)
 
 
 # =============================================================================
@@ -272,16 +261,25 @@ def after_request(response):
 # =============================================================================
 # Health Check with Token Protection
 # =============================================================================
+# Token requerido en producción para proteger endpoint de monitoreo
+HEALTH_CHECK_TOKEN = os.environ.get('HEALTH_CHECK_TOKEN')
+
+if IS_PRODUCTION and not HEALTH_CHECK_TOKEN:
+    # Generar token automático en producción si no está configurado
+    HEALTH_CHECK_TOKEN = secrets.token_hex(16)
+    logger.warning(
+        f"HEALTH_CHECK_TOKEN not configured. Generated: {HEALTH_CHECK_TOKEN[:8]}... "
+        "Add to Vercel env vars for persistent access.",
+        extra={"component": "security", "generated_token_prefix": HEALTH_CHECK_TOKEN[:8]}
+    )
+
 def require_health_token(f):
-    """Decorator to protect health endpoints with optional token."""
+    """Decorator to protect health endpoints with token."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # In production, require a secret token if configured
-        health_token = os.environ.get('HEALTH_CHECK_TOKEN')
-        if health_token:
+        if HEALTH_CHECK_TOKEN:
             provided_token = request.headers.get('X-Health-Token', '')
-            # Use hmac.compare_digest to prevent timing attacks
-            if not hmac.compare_digest(provided_token, health_token):
+            if not hmac.compare_digest(provided_token, HEALTH_CHECK_TOKEN):
                 return Response('Unauthorized', status=401)
         return f(*args, **kwargs)
     return decorated_function
