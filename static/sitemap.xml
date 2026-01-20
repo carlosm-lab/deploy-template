@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Sitemap - Deploy Template -->
+<!-- 
+    Sitemap - Deploy Template
+    IMPORTANTE: Actualiza las URLs antes de producción
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <!-- Actualiza TU-DOMINIO con tu dominio real -->
     <url>
-        <loc>https://verceldeploy.vercel.app/</loc>
+        <loc>https://TU-DOMINIO.vercel.app/</loc>
         <lastmod>2026-01-20</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>

@@ -127,13 +127,11 @@ if not SECRET_KEY:
             "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
         )
     else:
-        # Development only: Generate deterministic key based on working directory
-        # This prevents session invalidation on restart while keeping dev simple
-        import hashlib
-        dev_seed = os.path.abspath(os.getcwd()).encode()
-        SECRET_KEY = hashlib.sha256(dev_seed + b'dev-only-key').hexdigest()
+        # Development: Generate truly random key each startup
+        # Sessions will reset on restart, but that's acceptable for dev
+        SECRET_KEY = secrets.token_hex(32)
         logger.warning(
-            "SECRET_KEY not configured. Using deterministic dev key (NOT for production).",
+            "SECRET_KEY not configured. Generated random dev key (sessions reset on restart).",
             extra={"security": "warning", "component": "config"}
         )
 
@@ -148,43 +146,58 @@ app.config['WTF_CSRF_ENABLED'] = True  # Prepared for future forms
 # =============================================================================
 # Rate Limiting Configuration
 # =============================================================================
-# NOTE: In Vercel serverless, memory-based rate limiting doesn't work because
-# each function invocation has isolated memory. For production rate limiting,
-# rely on Vercel Edge or use Redis (e.g., Upstash).
-#
-# This limiter is only effective for local development.
-ENABLE_RATE_LIMIT = os.environ.get('ENABLE_RATE_LIMIT', 'false').lower() == 'true'
+# Usa Redis (Upstash) en producción para rate limiting distribuido.
+# En desarrollo usa memoria local.
+# =============================================================================
 
-if ENABLE_RATE_LIMIT or IS_DEVELOPMENT:
-    from flask_limiter import Limiter
-    from flask_limiter.util import get_remote_address
-    
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+# Determinar storage backend
+REDIS_URL = os.environ.get('REDIS_URL') or os.environ.get('UPSTASH_REDIS_REST_URL')
+
+if REDIS_URL:
+    # Producción: Redis distribuido (funciona en serverless)
+    RATE_LIMIT_STORAGE = REDIS_URL
+    logger.info(
+        "Rate limiting using Redis backend",
+        extra={"component": "security", "backend": "redis"}
+    )
+elif IS_PRODUCTION:
+    # Producción SIN Redis: Deshabilitado con warning
+    RATE_LIMIT_STORAGE = None
+    logger.warning(
+        "REDIS_URL not configured. Rate limiting DISABLED in production. "
+        "Configure Upstash Redis or Vercel Firewall for protection.",
+        extra={"component": "security", "risk": "high"}
+    )
+else:
+    # Desarrollo: Memoria local
+    RATE_LIMIT_STORAGE = "memory://"
+    logger.info(
+        "Rate limiting using memory backend (development only)",
+        extra={"component": "security", "backend": "memory"}
+    )
+
+# Inicializar limiter solo si tenemos storage
+if RATE_LIMIT_STORAGE:
     limiter = Limiter(
         key_func=get_remote_address,
         app=app,
         default_limits=["200 per day", "50 per hour"],
-        storage_uri="memory://",
-        enabled=ENABLE_RATE_LIMIT or IS_DEVELOPMENT,
+        storage_uri=RATE_LIMIT_STORAGE,
     )
     
     def rate_limit(limit_string):
         """Apply rate limit decorator."""
         return limiter.limit(limit_string)
 else:
-    # No-op decorator for production
-    # IMPORTANT: In production (Vercel), configure rate limiting via:
-    # - Vercel Dashboard > Project Settings > Security > Rate Limiting
-    # - Or use Vercel Firewall / WAF for enterprise
+    # No-op decorator cuando no hay storage
     def rate_limit(limit_string):
         def decorator(f):
             return f
         return decorator
     limiter = None
-    
-    logger.info(
-        "Flask rate limiting disabled. Configure rate limiting in Vercel Dashboard for production.",
-        extra={"component": "security", "production": True}
-    )
 
 
 # =============================================================================
@@ -361,10 +374,7 @@ def ratelimit_handler(error):
             "error_type": "rate_limit"
         }
     )
-    return {
-        'error': 'rate_limit_exceeded',
-        'message': 'Too many requests. Please try again later.'
-    }, 429
+    return render_template('errors/429.html'), 429
 
 
 @app.errorhandler(500)

@@ -10,5 +10,5 @@
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://verceldeploy.vercel.app/static/sitemap.xml
+# IMPORTANTE: Actualiza la URL del sitemap antes de producción
+# Sitemap: https://TU-DOMINIO.vercel.app/static/sitemap.xml

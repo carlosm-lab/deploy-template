@@ -4,12 +4,12 @@
 
 Si encuentra una vulnerabilidad de seguridad, por favor repórtela responsablemente:
 
-- **Email**: security@verceldeploy.com
+- **GitHub**: Usar [Security Advisories](../../security/advisories/new)
 - **Respuesta esperada**: 48 horas
 
 ## Content Security Policy (CSP)
 
-Este proyecto implementa una CSP **muy restrictiva** por diseño. Esto significa:
+Este proyecto implementa una CSP **muy restrictiva** por diseño:
 
 ### ✅ Permitido
 - Scripts desde el mismo origen (`'self'`)
@@ -31,32 +31,37 @@ Este proyecto implementa una CSP **muy restrictiva** por diseño. Esto significa
 
 Si necesita añadir scripts/estilos externos:
 
-1. **Editar** `app.py` línea ~235
-2. **Editar** `vercel.json` línea ~80-81
+1. Buscar `Content-Security-Policy` en `app.py`
+2. Buscar `Content-Security-Policy` en `vercel.json`
 3. Añadir el dominio específico, ejemplo:
    ```
    script-src 'self' https://www.googletagmanager.com;
    ```
 
-### CSP Report-Only (Recomendado para staging)
-
-Para detectar violaciones sin bloquear, cambie:
-```
-Content-Security-Policy-Report-Only: ...
-```
-
 ## HSTS
 
-El header HSTS está configurado **sin** `preload` por defecto.
+El header HSTS está configurado con:
+- `max-age=31536000` (1 año)
+- `includeSubDomains`
 
 Para añadir preload:
 1. Registrar dominio en https://hstspreload.org/
 2. Esperar confirmación
-3. Cambiar header a incluir `preload`
+3. Agregar `preload` al header
 
 ## Rate Limiting
 
-En **desarrollo local**: Flask-Limiter (memoria)  
-En **producción (Vercel)**: Configurar en Vercel Dashboard > Security > Rate Limiting
+- **Desarrollo local**: Flask-Limiter con memoria
+- **Producción (Vercel)**: 
+  - Requiere Redis (Upstash) configurado via `REDIS_URL`
+  - Alternativa: Configurar en Vercel Dashboard > Security > Rate Limiting
 
-⚠️ El rate limiting de Flask-Limiter NO funciona en serverless (memoria aislada).
+⚠️ **Sin Redis configurado, el rate limiting estará deshabilitado en producción.**
+
+## Variables de Entorno Requeridas
+
+| Variable | Requerido | Descripción |
+|----------|-----------|-------------|
+| `SECRET_KEY` | ✅ Producción | Clave criptográfica de 64 caracteres hex |
+| `REDIS_URL` | Recomendado | URL de Redis para rate limiting |
+| `HEALTH_CHECK_TOKEN` | Opcional | Token para proteger /healthz |

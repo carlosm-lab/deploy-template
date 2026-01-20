@@ -43,20 +43,6 @@
             "label": "Página principal en construcción"
         }
     ],
-    "shortcuts": [
-        {
-            "name": "Estado del Sistema",
-            "short_name": "Estado",
-            "description": "Ver estado de salud del sistema",
-            "url": "/healthz",
-            "icons": [
-                {
-                    "src": "/static/favicon.svg",
-                    "sizes": "any"
-                }
-            ]
-        }
-    ],
     "related_applications": [],
     "prefer_related_applications": false
 }
