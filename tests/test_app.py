@@ -460,10 +460,11 @@ class TestTemplates:
         # Verificar que el robot SVG se renderiza
         assert b'robot' in response.data.lower() or b'Robot' in response.data
 
-    def test_index_renders_footer(self, client):
-        """La página principal debe renderizar el footer con copyright."""
+    def test_index_renders_design_badge(self, client):
+        """La página principal debe renderizar el badge de diseño."""
         response = client.get('/')
-        assert b'derechos reservados' in response.data.lower() or b'VercelDeploy' in response.data
+        # Verificar que el badge de diseño está presente
+        assert b'Designed BY' in response.data or b'Carlos Molina' in response.data
 
     def test_index_renders_status_panel(self, client):
         """La página principal debe renderizar el panel de estado."""
