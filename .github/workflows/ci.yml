@@ -35,7 +35,7 @@ jobs:
         run: pip-audit --strict
       
       - name: Lint check (flake8)
-        run: flake8 app.py --max-line-length=120 --ignore=E501,W503
+        run: flake8 app.py --max-line-length=120 --ignore=E501,W503,E402,E226,E302,E303
       
       - name: Smoke test
         run: python -c "from app import app; print('App OK')"

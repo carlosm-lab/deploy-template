@@ -16,7 +16,7 @@ from datetime import datetime, timezone, timedelta
 from functools import wraps
 
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, g, Response, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, g, Response, redirect, url_for
 
 # Load environment variables from .env files (development)
 load_dotenv()
@@ -37,7 +37,7 @@ DEPLOYMENT_ID = os.environ.get('VERCEL_DEPLOYMENT_ID', os.environ.get('VERCEL_GI
 
 class JSONFormatter(logging.Formatter):
     """Formatter that outputs JSON for structured logging."""
-    
+
     def format(self, record):
         log_record = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -86,36 +86,36 @@ def anonymize_ip(ip_address: str) -> str:
     """
     Anonimiza una dirección IP para cumplimiento GDPR.
     Usa el módulo ipaddress para manejo robusto de todos los formatos.
-    
+
     Política de Anonimización:
     - IPv4: Reemplaza último octeto con 0 (/24 - ~256 hosts)
     - IPv6: Mantiene solo /48 (~65K subnets)
-    
+
     Nota de Compliance:
     Esta anonimización cumple con la mayoría de interpretaciones de GDPR.
     Para requerimientos más estrictos, considerar no logear IPs en absoluto.
     """
     if not ip_address:
         return 'unknown'
-    
+
     try:
         # Handle IPv4-mapped IPv6 addresses (::ffff:192.168.1.1)
         addr = ipaddress.ip_address(ip_address)
-        
+
         if isinstance(addr, ipaddress.IPv4Address):
             # Zero out last octet: 192.168.1.100 -> 192.168.1.0
             network = ipaddress.IPv4Network(f"{ip_address}/24", strict=False)
             return str(network.network_address)
-        
+
         elif isinstance(addr, ipaddress.IPv6Address):
             # Zero out last 80 bits (keep /48): 2001:db8:85a3::1 -> 2001:db8:85a3::
             network = ipaddress.IPv6Network(f"{ip_address}/48", strict=False)
             return str(network.network_address)
-    
+
     except ValueError:
         # Invalid IP format
         return 'invalid-ip'
-    
+
     return 'unknown'
 
 
@@ -249,10 +249,10 @@ def after_request(response):
     """Add security headers and request correlation."""
     # Add request ID to response for tracing
     response.headers['X-Request-ID'] = g.request_id
-    
+
     # Remove server header to prevent fingerprinting
     response.headers.pop('Server', None)
-    
+
     # Security headers for dev/prod parity (Vercel adds these too, but this ensures local dev matches)
     # Only add if not already present (allows Vercel to override)
     security_headers = {
@@ -272,7 +272,7 @@ def after_request(response):
     for header, value in security_headers.items():
         if header not in response.headers:
             response.headers[header] = value
-    
+
     # Log request completion
     duration_ms = (datetime.now(timezone.utc) - g.request_start).total_seconds() * 1000
     logger.info(
@@ -329,7 +329,7 @@ def health():
     """
     Health check endpoint for monitoring.
     Protected by optional HEALTH_CHECK_TOKEN environment variable.
-    
+
     Returns status and basic checks.
     """
     checks = {
@@ -346,20 +346,20 @@ def ready():
     """
     Readiness check endpoint - verifies system can serve traffic.
     Protected by optional HEALTH_CHECK_TOKEN environment variable.
-    
+
     Unlike /healthz (liveness), this indicates whether the app
     is configured and ready to handle requests properly.
     Useful for load balancers and orchestrators.
-    
+
     Note: For this template, readiness means configuration is valid.
     In a full application, this would verify database connections, etc.
     """
     checks = {'app': 'ok'}
-    
+
     # Redis check: reports configuration status
     # In production, REDIS_URL is required so this will be 'configured'
     checks['redis'] = 'configured' if REDIS_URL else 'not_configured'
-    
+
     # All checks pass if we reach this point (startup validations passed)
     return {'status': 'ready', 'checks': checks}, 200
 
@@ -413,7 +413,7 @@ else:
 
 # Security contact for security.txt
 SECURITY_CONTACT = os.environ.get(
-    'SECURITY_CONTACT', 
+    'SECURITY_CONTACT',
     'https://github.com/Memory-Bank/deploy/security/advisories/new'
 )
 
@@ -547,21 +547,21 @@ def internal_error(error):
     """Custom 500 error page."""
     # Log with correlation ID for debugging
     error_id = g.get('request_id', 'unknown')
-    
+
     # Build log extra data - sanitize in production
     log_extra = {
         "error_type": "internal",
         "error_id": error_id,
         "exception_type": type(error).__name__,
     }
-    
+
     # Only include full traceback in development (security: prevent info disclosure)
     if IS_DEVELOPMENT:
         exc_info = traceback.format_exc()
         if exc_info != 'NoneType: None\n':
             log_extra["traceback"] = exc_info
             log_extra["exception"] = str(error)
-    
+
     logger.error(f"Internal server error (ref: {error_id})", extra=log_extra)
     return render_template('errors/500.html', error_id=error_id), 500
 
@@ -580,14 +580,14 @@ if __name__ == '__main__':
     debug_requested = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
     debug_mode = IS_DEVELOPMENT and debug_requested
     port = int(os.environ.get('PORT', 5000))
-    
+
     # Log security warning if debug was requested in production
     if IS_PRODUCTION and debug_requested:
         logger.error(
             "FLASK_DEBUG=true IGNORED in production for security. Debug mode blocked.",
             extra={"security": "blocked", "component": "config"}
         )
-    
+
     if debug_mode:
         logger.info("Starting in DEBUG mode (development only)", extra={"mode": "debug"})
         app.run(debug=True, host='127.0.0.1', port=port)
