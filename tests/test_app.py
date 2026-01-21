@@ -314,6 +314,82 @@ class TestHealthCheckProtection:
         data = response.get_json()
         assert data['status'] == 'ok'
 
+    def test_ready_endpoint_exists(self, client):
+        """Endpoint /ready debe existir y retornar JSON."""
+        response = client.get('/ready')
+        assert response.status_code == 200
+        assert response.content_type == 'application/json'
+
+    def test_ready_returns_correct_structure(self, client):
+        """Ready debe retornar status y checks."""
+        response = client.get('/ready')
+        data = response.get_json()
+        assert 'status' in data
+        assert 'checks' in data
+        assert 'app' in data['checks']
+
+    def test_healthz_with_token_protection(self, monkeypatch):
+        """Con HEALTH_CHECK_TOKEN configurado, healthz requiere token."""
+        import importlib
+        import os
+        
+        # Save original state
+        original_token = os.environ.get('HEALTH_CHECK_TOKEN')
+        
+        try:
+            monkeypatch.setenv('HEALTH_CHECK_TOKEN', 'test-secret-token')
+            import app as app_module
+            importlib.reload(app_module)
+            
+            with app_module.app.test_client() as test_client:
+                # Without token - should fail
+                response = test_client.get('/healthz')
+                assert response.status_code == 401
+                
+                # With wrong token - should fail
+                response = test_client.get('/healthz', headers={'X-Health-Token': 'wrong'})
+                assert response.status_code == 401
+                
+                # With correct token - should succeed
+                response = test_client.get('/healthz', headers={'X-Health-Token': 'test-secret-token'})
+                assert response.status_code == 200
+        finally:
+            # Cleanup: restore module to original state
+            if original_token:
+                os.environ['HEALTH_CHECK_TOKEN'] = original_token
+            elif 'HEALTH_CHECK_TOKEN' in os.environ:
+                del os.environ['HEALTH_CHECK_TOKEN']
+            importlib.reload(app_module)
+
+    def test_ready_with_token_protection(self, monkeypatch):
+        """Con HEALTH_CHECK_TOKEN configurado, ready requiere token."""
+        import importlib
+        import os
+        
+        # Save original state
+        original_token = os.environ.get('HEALTH_CHECK_TOKEN')
+        
+        try:
+            monkeypatch.setenv('HEALTH_CHECK_TOKEN', 'test-secret-token')
+            import app as app_module
+            importlib.reload(app_module)
+            
+            with app_module.app.test_client() as test_client:
+                # Without token - should fail
+                response = test_client.get('/ready')
+                assert response.status_code == 401
+                
+                # With correct token - should succeed
+                response = test_client.get('/ready', headers={'X-Health-Token': 'test-secret-token'})
+                assert response.status_code == 200
+        finally:
+            # Cleanup: restore module to original state
+            if original_token:
+                os.environ['HEALTH_CHECK_TOKEN'] = original_token
+            elif 'HEALTH_CHECK_TOKEN' in os.environ:
+                del os.environ['HEALTH_CHECK_TOKEN']
+            importlib.reload(app_module)
+
 
 # ==============================================================================
 # Tests de Rate Limiting (Desarrollo)

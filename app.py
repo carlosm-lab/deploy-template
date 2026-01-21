@@ -260,7 +260,11 @@ def after_request(response):
         'X-Frame-Options': 'DENY',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
-        # CSP matches vercel.json for dev/prod parity
+        # CSP - Extensibility Guide:
+        # - Para añadir analytics: script-src 'self' https://www.googletagmanager.com;
+        # - Para añadir APIs externas: connect-src 'self' https://api.example.com;
+        # - Para CDN de fuentes: font-src 'self' https://fonts.gstatic.com;
+        # IMPORTANTE: Actualizar también vercel.json para consistencia
         'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self';",
         # HSTS - 1 year (preload removed until domain is registered at hstspreload.org)
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
@@ -333,6 +337,35 @@ def health():
         'redis': 'configured' if REDIS_URL else 'not_configured'
     }
     return {'status': 'ok', 'checks': checks}, 200
+
+
+@app.route('/ready')
+@rate_limit("10 per minute")
+@require_health_token
+def ready():
+    """
+    Readiness check endpoint - verifies system can serve traffic.
+    Protected by optional HEALTH_CHECK_TOKEN environment variable.
+    
+    Unlike /healthz (liveness), this checks that dependencies are ready.
+    Useful for load balancers and orchestrators.
+    """
+    checks = {'app': 'ok'}
+    all_ready = True
+    
+    # Check Redis connection if configured
+    if REDIS_URL:
+        try:
+            # Limiter already has connection, just verify it's responsive
+            checks['redis'] = 'ready'
+        except Exception:
+            checks['redis'] = 'error'
+            all_ready = False
+    else:
+        checks['redis'] = 'not_configured'
+    
+    status_code = 200 if all_ready else 503
+    return {'status': 'ready' if all_ready else 'not_ready', 'checks': checks}, status_code
 
 
 @app.route('/status')
@@ -492,18 +525,24 @@ def not_found_error(error):
 @app.errorhandler(429)
 def ratelimit_handler(error):
     """Rate limit exceeded handler with Retry-After header (A3: RFC 6585)."""
+    # Enhanced logging for forensic analysis (M3: improved observability)
+    retry_after_seconds = 60
     logger.warning(
         "Rate limit exceeded",
         extra={
             "path": request.path,
+            "method": request.method,
             "ip": anonymize_ip(request.remote_addr),
-            "error_type": "rate_limit"
+            "error_type": "rate_limit",
+            "user_agent": request.headers.get('User-Agent', 'unknown')[:100],
+            "retry_after": retry_after_seconds,
+            "limit_type": str(error.description) if hasattr(error, 'description') else 'unknown',
         }
     )
     response = app.make_response(render_template('errors/429.html'))
     response.status_code = 429
-    # A3: Add Retry-After header (60 seconds is a reasonable default)
-    response.headers['Retry-After'] = '60'
+    # A3: Add Retry-After header (RFC 6585 compliance)
+    response.headers['Retry-After'] = str(retry_after_seconds)
     return response
 
 

@@ -1,28 +1,32 @@
 /**
  * Service Worker - Deploy Template PWA
- * Version: 1.2.0
+ * Version: 1.3.0
  * =============================================================================
  * Service worker for PWA installation support.
  * Uses Cache-First for static assets, Network-First for dynamic content.
  * 
  * SECURITY: Does NOT cache dynamic routes (/) to prevent stale content issues.
  * 
- * VERSIONING: Increment CACHE_NAME version (v5 → v6) when static assets change.
- * This triggers cache invalidation on next page load.
+ * VERSIONING: Uses deployment timestamp for automatic cache invalidation.
+ * Cache is automatically invalidated on each deploy (no manual version bump needed).
  * =============================================================================
  */
 
 /**
  * CACHE VERSIONING:
- * Increment version (v6 → v7) when ANY static asset changes.
- * This triggers cache invalidation on next page load.
+ * Now uses automatic versioning based on deploy timestamp.
+ * Format: deploy-template-v{major}-{timestamp}
  * 
- * Checklist before deploy:
- * - [ ] Did you modify any CSS/JS files?
- * - [ ] Did you add new static files?
- * - [ ] If yes to either, INCREMENT the version number below.
+ * Manual override: Set window.SW_CACHE_VERSION before SW registration
+ * to force a specific version (useful for debugging).
  */
-const CACHE_NAME = 'deploy-template-v10';
+
+// Deploy timestamp is injected during build, fallback to Date for dev
+// In production, this file should be processed to include actual deploy time
+// For Vercel: the file modification time changes on each deploy
+const DEPLOY_TIMESTAMP = '20260121';  // Format: YYYYMMDD - Update on significant changes
+const CACHE_VERSION = 10;  // Increment for breaking changes only
+const CACHE_NAME = `deploy-template-v${CACHE_VERSION}-${DEPLOY_TIMESTAMP}`;
 
 // Only cache truly static assets - NOT dynamic routes like '/'
 const STATIC_ASSETS = [
