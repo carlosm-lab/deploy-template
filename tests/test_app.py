@@ -54,21 +54,24 @@ class TestRoutes:
         assert response.content_type == 'application/json'
 
     def test_healthz_endpoint_has_required_fields(self, client):
-        """El endpoint /healthz debe tener solo status (no timestamp por seguridad)."""
+        """El endpoint /healthz debe tener status y checks (A2: Enhanced)."""
         response = client.get('/healthz')
         data = response.get_json()
         assert 'status' in data
         assert data['status'] == 'ok'
+        assert 'checks' in data
+        assert 'app' in data['checks']
         # SECURITY: timestamp fue removido para prevenir information disclosure
         assert 'timestamp' not in data
 
-    def test_healthz_minimal_response(self, client):
-        """El healthz debe retornar respuesta mínima (solo status)."""
+    def test_healthz_response_structure(self, client):
+        """El healthz debe retornar status y checks."""
         response = client.get('/healthz')
         data = response.get_json()
-        # Solo debe tener 'status', nada más
-        assert len(data) == 1
-        assert data == {'status': 'ok'}
+        # Debe tener 'status' y 'checks'
+        assert 'status' in data
+        assert 'checks' in data
+        assert data['checks']['app'] == 'ok'
 
 
     def test_status_redirects_to_healthz(self, client):
@@ -536,3 +539,104 @@ class TestSEORoutes:
             response = test_client.get('/robots.txt')
             assert b'https://example.com/sitemap.xml' in response.data
 
+
+# ==============================================================================
+# Tests de CSP Compliance (M6: Validación de archivos HTML)
+# ==============================================================================
+class TestCSPCompliance:
+    """Tests para verificar que archivos HTML cumplen con CSP."""
+
+    def test_offline_html_no_inline_scripts(self):
+        """offline.html no debe contener scripts inline."""
+        import os
+        offline_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static', 'offline.html'
+        )
+        with open(offline_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # No debe tener <script> sin src
+        import re
+        inline_scripts = re.findall(r'<script(?![^>]*\ssrc=)[^>]*>.*?</script>', content, re.DOTALL | re.IGNORECASE)
+        assert len(inline_scripts) == 0, f"Found inline scripts in offline.html: {inline_scripts}"
+
+    def test_offline_html_no_inline_styles(self):
+        """offline.html no debe contener estilos inline (<style> tags)."""
+        import os
+        offline_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static', 'offline.html'
+        )
+        with open(offline_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # No debe tener <style> tags
+        import re
+        inline_styles = re.findall(r'<style[^>]*>.*?</style>', content, re.DOTALL | re.IGNORECASE)
+        assert len(inline_styles) == 0, f"Found inline styles in offline.html: {inline_styles[:100]}"
+
+    def test_offline_html_uses_external_css(self):
+        """offline.html debe usar CSS externo."""
+        import os
+        offline_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static', 'offline.html'
+        )
+        with open(offline_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        assert 'href="/static/css/offline.css"' in content or "href='/static/css/offline.css'" in content
+
+    def test_offline_html_uses_external_js(self):
+        """offline.html debe usar JS externo."""
+        import os
+        offline_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static', 'offline.html'
+        )
+        with open(offline_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        assert 'src="/static/js/offline.js"' in content or "src='/static/js/offline.js'" in content
+
+
+# ==============================================================================
+# Tests de Configuración de Seguridad Adicionales (A5)
+# ==============================================================================
+class TestSecurityConfiguration:
+    """Tests para configuración de seguridad de la aplicación."""
+
+    def test_max_content_length_configured(self):
+        """MAX_CONTENT_LENGTH debe estar configurado para prevenir DoS."""
+        from app import app
+        assert 'MAX_CONTENT_LENGTH' in app.config
+        assert app.config['MAX_CONTENT_LENGTH'] == 1 * 1024 * 1024  # 1MB
+
+    def test_session_cookie_httponly(self):
+        """SESSION_COOKIE_HTTPONLY debe estar habilitado."""
+        from app import app
+        assert app.config.get('SESSION_COOKIE_HTTPONLY') is True
+
+    def test_session_cookie_samesite(self):
+        """SESSION_COOKIE_SAMESITE debe estar configurado."""
+        from app import app
+        assert app.config.get('SESSION_COOKIE_SAMESITE') == 'Lax'
+
+    def test_new_static_files_exist(self):
+        """Archivos nuevos de CSP compliance deben existir."""
+        import os
+        static_dir = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static'
+        )
+        
+        required_files = [
+            os.path.join('css', 'offline.css'),
+            os.path.join('js', 'offline.js'),
+            os.path.join('js', 'error-handlers.js'),
+        ]
+        
+        for filename in required_files:
+            filepath = os.path.join(static_dir, filename)
+            assert os.path.exists(filepath), f"Missing required file: {filename}"

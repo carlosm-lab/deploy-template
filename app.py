@@ -143,6 +143,14 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 app.config['WTF_CSRF_ENABLED'] = True  # Prepared for future forms
 
+# Security: Limit request body size to prevent DoS (M4)
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1 MB
+
+# Security: Cookie configuration (M5)
+app.config['SESSION_COOKIE_SECURE'] = IS_PRODUCTION
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 # =============================================================================
 # Rate Limiting Configuration
 # =============================================================================
@@ -177,12 +185,16 @@ else:
         extra={"component": "security", "backend": "memory"}
     )
 
-# Siempre inicializar limiter
+# Siempre inicializar limiter (A1: añadido storage_options con timeouts)
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
     default_limits=["200 per day", "50 per hour"],
     storage_uri=RATE_LIMIT_STORAGE,
+    storage_options={
+        "socket_connect_timeout": 2,  # 2 second connection timeout
+        "socket_timeout": 2,          # 2 second socket timeout
+    } if REDIS_URL else {},
 )
 
 def rate_limit(limit_string):
@@ -316,12 +328,32 @@ def index():
 @require_health_token
 def health():
     """
-    Health check endpoint for monitoring.
+    Health check endpoint for monitoring (A2: Enhanced).
     Protected by optional HEALTH_CHECK_TOKEN environment variable.
     
-    Returns minimal information to prevent information disclosure.
+    Returns status and checks for dependencies.
+    Returns 503 if any critical dependency is unhealthy.
     """
-    return {'status': 'ok'}
+    checks = {'app': 'ok'}
+    overall_status = 'ok'
+    
+    # Verify Redis connection if configured
+    if REDIS_URL:
+        try:
+            # Check if limiter storage is accessible
+            # Flask-Limiter uses redis under the hood
+            limiter.storage.check()
+            checks['redis'] = 'ok'
+        except Exception as e:
+            checks['redis'] = 'error'
+            overall_status = 'degraded'
+            logger.warning(
+                "Health check: Redis connection failed",
+                extra={"component": "health", "error": str(e)[:100]}
+            )
+    
+    response_code = 200 if overall_status == 'ok' else 503
+    return {'status': overall_status, 'checks': checks}, response_code
 
 
 @app.route('/status')
@@ -340,10 +372,18 @@ def status():
 # URLs hardcodeadas. En producción, usar variable de entorno BASE_URL.
 # =============================================================================
 
-# Base URL configuration - required for SEO files
+# Base URL configuration - required for SEO files (A3: Added production warning)
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
 # Remove trailing slash if present
 BASE_URL = BASE_URL.rstrip('/')
+
+# Warn if BASE_URL is not configured in production (A3)
+if IS_PRODUCTION and BASE_URL == 'http://localhost:5000':
+    logger.error(
+        "BASE_URL not configured! SEO files (robots.txt, sitemap.xml, security.txt) "
+        "will contain invalid localhost URLs. Set BASE_URL environment variable.",
+        extra={"component": "config", "severity": "high"}
+    )
 
 # Security contact for security.txt
 SECURITY_CONTACT = os.environ.get(

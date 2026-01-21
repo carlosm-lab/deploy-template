@@ -56,6 +56,13 @@
     <script src="{{ url_for('static', filename='js/sw-register.js') }}"></script>
 
     {% block extra_scripts %}{% endblock %}
+
+    <!-- L6: Fallback for users with JavaScript disabled -->
+    <noscript>
+        <div style="background: #fef3c7; color: #92400e; padding: 1rem; text-align: center; font-family: sans-serif;">
+            Este sitio funciona mejor con JavaScript habilitado.
+        </div>
+    </noscript>
 </body>
 
 </html>

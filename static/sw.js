@@ -12,15 +12,28 @@
  * =============================================================================
  */
 
-const CACHE_NAME = 'deploy-template-v5';
+/**
+ * CACHE VERSIONING:
+ * Increment version (v6 → v7) when ANY static asset changes.
+ * This triggers cache invalidation on next page load.
+ * 
+ * Checklist before deploy:
+ * - [ ] Did you modify any CSS/JS files?
+ * - [ ] Did you add new static files?
+ * - [ ] If yes to either, INCREMENT the version number below.
+ */
+const CACHE_NAME = 'deploy-template-v6';
 
 // Only cache truly static assets - NOT dynamic routes like '/'
 const STATIC_ASSETS = [
     '/static/css/main.css',
     '/static/css/tailwind.css',
     '/static/css/fonts.css',
+    '/static/css/offline.css',
     '/static/js/main.js',
     '/static/js/sw-register.js',
+    '/static/js/offline.js',
+    '/static/js/error-handlers.js',
     '/static/favicon.svg',
     '/static/manifest.json',
     '/static/offline.html',

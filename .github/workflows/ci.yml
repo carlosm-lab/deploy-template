@@ -61,3 +61,20 @@ jobs:
           test -f static/favicon.svg
           test -f static/icons/icon-192.png
           test -f static/icons/icon-512.png
+      
+      - name: Validate CSP compliance (M6)
+        run: |
+          # Check offline.html has no inline scripts or styles
+          if grep -E '<script[^>]*>[^<]' static/offline.html | grep -v 'src='; then
+            echo "ERROR: Found inline script in offline.html"
+            exit 1
+          fi
+          if grep -E '<style[^>]*>' static/offline.html; then
+            echo "ERROR: Found inline style in offline.html"
+            exit 1
+          fi
+          # Verify new CSP-compliant files exist
+          test -f static/css/offline.css
+          test -f static/js/offline.js
+          test -f static/js/error-handlers.js
+          echo "CSP compliance validation passed"

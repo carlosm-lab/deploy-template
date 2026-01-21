@@ -40,7 +40,8 @@
                 <span class="material-symbols-outlined">home</span>
                 Volver al inicio
             </a>
-            <button onclick="location.reload()"
+            <!-- CSP Compliant: data-action instead of onclick -->
+            <button type="button" data-action="reload"
                 class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-slate-200 text-slate-600 font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                 <span class="material-symbols-outlined">refresh</span>
                 Reintentar
@@ -48,4 +49,6 @@
         </div>
     </div>
 </main>
+<!-- CSP Compliant: External script for button handlers -->
+<script src="{{ url_for('static', filename='js/error-handlers.js') }}"></script>
 {% endblock %}
