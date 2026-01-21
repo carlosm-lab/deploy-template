@@ -12,7 +12,7 @@ import uuid
 import logging
 import ipaddress
 import hmac
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 
 from dotenv import load_dotenv
@@ -31,6 +31,10 @@ IS_DEVELOPMENT = not IS_PRODUCTION
 # =============================================================================
 # Structured JSON Logger
 # =============================================================================
+# Deployment identification for logs (M4: observability)
+DEPLOYMENT_ID = os.environ.get('VERCEL_DEPLOYMENT_ID', os.environ.get('VERCEL_GIT_COMMIT_SHA', 'local')[:12])
+
+
 class JSONFormatter(logging.Formatter):
     """Formatter that outputs JSON for structured logging."""
     
@@ -40,6 +44,7 @@ class JSONFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
+            "deployment_id": DEPLOYMENT_ID,
         }
         # Add request context if available
         try:
@@ -346,24 +351,55 @@ def status():
 # URLs hardcodeadas. En producción, usar variable de entorno BASE_URL.
 # =============================================================================
 
-# Base URL configuration - required for SEO files (A3: Added production warning)
-BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
+# Base URL configuration - required for SEO files (A2: Enhanced validation)
+BASE_URL_RAW = os.environ.get('BASE_URL', 'http://localhost:5000')
 # Remove trailing slash if present
-BASE_URL = BASE_URL.rstrip('/')
+BASE_URL_RAW = BASE_URL_RAW.rstrip('/')
 
-# Warn if BASE_URL is not configured in production (A3)
-if IS_PRODUCTION and BASE_URL == 'http://localhost:5000':
-    logger.error(
-        "BASE_URL not configured! SEO files (robots.txt, sitemap.xml, security.txt) "
-        "will contain invalid localhost URLs. Set BASE_URL environment variable.",
-        extra={"component": "config", "severity": "high"}
+# Validate BASE_URL format and enforce HTTPS in production (A2)
+BASE_URL_PATTERN = re.compile(r'^https?://[a-zA-Z0-9][a-zA-Z0-9\-_.]+[a-zA-Z0-9](:[0-9]+)?(/.*)?$')
+if not BASE_URL_PATTERN.match(BASE_URL_RAW):
+    if IS_PRODUCTION:
+        raise RuntimeError(
+            f"Invalid BASE_URL format: '{BASE_URL_RAW}'. "
+            "Must be a valid URL (e.g., https://example.vercel.app)"
+        )
+    BASE_URL = 'http://localhost:5000'
+    logger.warning(
+        f"Invalid BASE_URL '{BASE_URL_RAW}' ignored, using default",
+        extra={"component": "config", "provided_value": BASE_URL_RAW[:50]}
     )
+elif IS_PRODUCTION and BASE_URL_RAW.startswith('http://'):
+    raise RuntimeError(
+        f"BASE_URL must use HTTPS in production. Got: '{BASE_URL_RAW}'. "
+        "Change to https:// for security."
+    )
+elif IS_PRODUCTION and BASE_URL_RAW == 'http://localhost:5000':
+    raise RuntimeError(
+        "BASE_URL not configured for production! "
+        "Set BASE_URL environment variable (e.g., https://your-app.vercel.app)"
+    )
+else:
+    BASE_URL = BASE_URL_RAW
 
 # Security contact for security.txt
 SECURITY_CONTACT = os.environ.get(
     'SECURITY_CONTACT', 
     'https://github.com/Memory-Bank/deploy/security/advisories/new'
 )
+
+# Stable expiration date for security.txt (A1: RFC 9116 compliance)
+# Use deployment date or current date, expires in 1 year
+# In production, use deployment timestamp for stability
+if IS_PRODUCTION:
+    # Use a stable date based on deployment (or fallback to configured date)
+    SECURITY_TXT_EXPIRES = os.environ.get(
+        'SECURITY_TXT_EXPIRES',
+        (datetime.now(timezone.utc).replace(month=1, day=1) + timedelta(days=365+365)).strftime('%Y-%m-%dT00:00:00.000Z')
+    )
+else:
+    # Development: use 1 year from now
+    SECURITY_TXT_EXPIRES = (datetime.now(timezone.utc) + timedelta(days=365)).strftime('%Y-%m-%dT00:00:00.000Z')
 
 
 @app.route('/robots.txt')
@@ -399,11 +435,9 @@ def sitemap():
 @app.route('/.well-known/security.txt')
 def security_txt():
     """Generate security.txt per RFC 9116 dynamically with correct BASE_URL."""
-    # Expiry: 1 year from now
-    from datetime import timedelta
-    expires = (datetime.now(timezone.utc) + timedelta(days=365)).strftime('%Y-%m-%dT00:00:00.000Z')
+    # A1: Use stable expiration date (configured or deployment-based)
     content = f"""Contact: {SECURITY_CONTACT}
-Expires: {expires}
+Expires: {SECURITY_TXT_EXPIRES}
 Preferred-Languages: es, en
 Canonical: {BASE_URL}/.well-known/security.txt
 """
@@ -457,7 +491,7 @@ def not_found_error(error):
 
 @app.errorhandler(429)
 def ratelimit_handler(error):
-    """Rate limit exceeded handler."""
+    """Rate limit exceeded handler with Retry-After header (A3: RFC 6585)."""
     logger.warning(
         "Rate limit exceeded",
         extra={
@@ -466,7 +500,11 @@ def ratelimit_handler(error):
             "error_type": "rate_limit"
         }
     )
-    return render_template('errors/429.html'), 429
+    response = app.make_response(render_template('errors/429.html'))
+    response.status_code = 429
+    # A3: Add Retry-After header (60 seconds is a reasonable default)
+    response.headers['Retry-After'] = '60'
+    return response
 
 
 @app.errorhandler(500)

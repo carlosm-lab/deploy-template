@@ -1,4 +1,0 @@
-Contact: https://github.com/Memory-Bank/deploy/security/advisories/new
-Expires: 2027-01-20T00:00:00.000Z
-Preferred-Languages: es, en
-Canonical: https://deploy-liard-six.vercel.app/.well-known/security.txt

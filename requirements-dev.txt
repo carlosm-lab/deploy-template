@@ -8,7 +8,7 @@
 -r requirements.txt
 
 # Production Server (for non-Vercel deployments)
-gunicorn>=21.2.0
+gunicorn==23.0.0
 
 # Testing
 pytest==8.0.0
