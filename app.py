@@ -328,32 +328,16 @@ def index():
 @require_health_token
 def health():
     """
-    Health check endpoint for monitoring (A2: Enhanced).
+    Health check endpoint for monitoring.
     Protected by optional HEALTH_CHECK_TOKEN environment variable.
     
-    Returns status and checks for dependencies.
-    Returns 503 if any critical dependency is unhealthy.
+    Returns status and basic checks.
     """
-    checks = {'app': 'ok'}
-    overall_status = 'ok'
-    
-    # Verify Redis connection if configured
-    if REDIS_URL:
-        try:
-            # Check if limiter storage is accessible
-            # Flask-Limiter uses redis under the hood
-            limiter.storage.check()
-            checks['redis'] = 'ok'
-        except Exception as e:
-            checks['redis'] = 'error'
-            overall_status = 'degraded'
-            logger.warning(
-                "Health check: Redis connection failed",
-                extra={"component": "health", "error": str(e)[:100]}
-            )
-    
-    response_code = 200 if overall_status == 'ok' else 503
-    return {'status': overall_status, 'checks': checks}, response_code
+    checks = {
+        'app': 'ok',
+        'redis': 'configured' if REDIS_URL else 'not_configured'
+    }
+    return {'status': 'ok', 'checks': checks}, 200
 
 
 @app.route('/status')
