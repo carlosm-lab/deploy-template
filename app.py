@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from functools import wraps
 
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, g, Response, redirect, url_for
+from flask import Flask, render_template, request, g, Response, redirect, url_for, send_from_directory
 
 # Load environment variables from .env files (development)
 load_dotenv()
@@ -162,19 +162,20 @@ if REDIS_URL:
         "Rate limiting: Redis backend",
         extra={"component": "security", "backend": "redis"}
     )
+elif IS_PRODUCTION:
+    # CRÍTICO: Producción SIN Redis debe fallar explícitamente
+    raise RuntimeError(
+        "REDIS_URL environment variable is required for rate limiting in production. "
+        "Configure Upstash Redis (free tier available): https://upstash.com/ "
+        "Or set SKIP_RATE_LIMIT=true if using Vercel Firewall (not recommended)."
+    )
 else:
-    # Fallback a memoria - funciona en desarrollo, limitado en serverless
+    # Desarrollo: Memoria local
     RATE_LIMIT_STORAGE = "memory://"
-    if IS_PRODUCTION:
-        logger.warning(
-            "Rate limiting: memory backend (limited in serverless). Configure REDIS_URL for distributed limiting.",
-            extra={"component": "security", "backend": "memory", "risk": "medium"}
-        )
-    else:
-        logger.info(
-            "Rate limiting: memory backend",
-            extra={"component": "security", "backend": "memory"}
-        )
+    logger.info(
+        "Rate limiting: memory backend (development)",
+        extra={"component": "security", "backend": "memory"}
+    )
 
 # Siempre inicializar limiter
 limiter = Limiter(
@@ -192,12 +193,27 @@ def rate_limit(limit_string):
 # =============================================================================
 # Context Processors
 # =============================================================================
+# Validate SITE_NAME to prevent malformed values (M5: added validation)
+SITE_NAME_RAW = os.environ.get('SITE_NAME', 'VercelDeploy')
+# Allow only alphanumeric, spaces, hyphens, and basic punctuation
+SITE_NAME_PATTERN = re.compile(r'^[a-zA-Z0-9\s\-_\.]+$')
+if not SITE_NAME_PATTERN.match(SITE_NAME_RAW) or len(SITE_NAME_RAW) > 50:
+    SITE_NAME = 'VercelDeploy'
+    if IS_DEVELOPMENT:
+        logger.warning(
+            f"Invalid SITE_NAME '{SITE_NAME_RAW}' ignored, using default",
+            extra={"component": "config", "provided_value": SITE_NAME_RAW[:20]}
+        )
+else:
+    SITE_NAME = SITE_NAME_RAW
+
+
 @app.context_processor
 def inject_globals():
     """Inject global variables into all templates."""
     return {
         'current_year': datetime.now(timezone.utc).year,
-        'site_name': os.environ.get('SITE_NAME', 'VercelDeploy'),
+        'site_name': SITE_NAME,
     }
 
 
@@ -226,6 +242,9 @@ def after_request(response):
     """Add security headers and request correlation."""
     # Add request ID to response for tracing
     response.headers['X-Request-ID'] = g.request_id
+    
+    # Remove server header to prevent fingerprinting
+    response.headers.pop('Server', None)
     
     # Security headers for dev/prod parity (Vercel adds these too, but this ensures local dev matches)
     # Only add if not already present (allows Vercel to override)
@@ -265,12 +284,10 @@ def after_request(response):
 HEALTH_CHECK_TOKEN = os.environ.get('HEALTH_CHECK_TOKEN')
 
 if IS_PRODUCTION and not HEALTH_CHECK_TOKEN:
-    # Generar token automático en producción si no está configurado
-    HEALTH_CHECK_TOKEN = secrets.token_hex(16)
-    logger.warning(
-        f"HEALTH_CHECK_TOKEN not configured. Generated: {HEALTH_CHECK_TOKEN[:8]}... "
-        "Add to Vercel env vars for persistent access.",
-        extra={"component": "security", "generated_token_prefix": HEALTH_CHECK_TOKEN[:8]}
+    # CRÍTICO: Token requerido en producción
+    raise RuntimeError(
+        "HEALTH_CHECK_TOKEN environment variable is required in production. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_hex(16))\""
     )
 
 def require_health_token(f):
@@ -314,6 +331,69 @@ def status():
     Deprecated: Use /healthz instead.
     """
     return redirect(url_for('health'), code=301)
+
+
+# =============================================================================
+# SEO & Security Standard Routes (Dynamic Generation)
+# =============================================================================
+# Estas rutas generan contenido dinámicamente basado en BASE_URL para evitar
+# URLs hardcodeadas. En producción, usar variable de entorno BASE_URL.
+# =============================================================================
+
+# Base URL configuration - required for SEO files
+BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
+# Remove trailing slash if present
+BASE_URL = BASE_URL.rstrip('/')
+
+# Security contact for security.txt
+SECURITY_CONTACT = os.environ.get(
+    'SECURITY_CONTACT', 
+    'https://github.com/Memory-Bank/deploy/security/advisories/new'
+)
+
+
+@app.route('/robots.txt')
+def robots():
+    """Generate robots.txt dynamically with correct BASE_URL."""
+    content = f"""# robots.txt
+User-agent: *
+Allow: /
+
+Sitemap: {BASE_URL}/sitemap.xml
+"""
+    return Response(content, mimetype='text/plain')
+
+
+@app.route('/sitemap.xml')
+def sitemap():
+    """Generate sitemap.xml dynamically with correct BASE_URL."""
+    # Get current date for lastmod
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{BASE_URL}/</loc>
+        <lastmod>{today}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+</urlset>
+"""
+    return Response(content, mimetype='application/xml')
+
+
+@app.route('/.well-known/security.txt')
+def security_txt():
+    """Generate security.txt per RFC 9116 dynamically with correct BASE_URL."""
+    # Expiry: 1 year from now
+    from datetime import timedelta
+    expires = (datetime.now(timezone.utc) + timedelta(days=365)).strftime('%Y-%m-%dT00:00:00.000Z')
+    content = f"""Contact: {SECURITY_CONTACT}
+Expires: {expires}
+Preferred-Languages: es, en
+Canonical: {BASE_URL}/.well-known/security.txt
+"""
+    return Response(content, mimetype='text/plain')
 
 
 # =============================================================================

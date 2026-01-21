@@ -53,15 +53,16 @@ Para añadir preload:
 
 - **Desarrollo local**: Flask-Limiter con memoria
 - **Producción (Vercel)**: 
-  - Requiere Redis (Upstash) configurado via `REDIS_URL`
-  - Alternativa: Configurar en Vercel Dashboard > Security > Rate Limiting
+  - **OBLIGATORIO**: Redis (Upstash) configurado via `REDIS_URL`
+  - La aplicación **FALLARÁ al iniciar** si no está configurado
 
-⚠️ **Sin Redis configurado, el rate limiting estará deshabilitado en producción.**
+🚨 **CRÍTICO: Sin `REDIS_URL` configurado, la aplicación no iniciará en producción.**
 
 ## Variables de Entorno Requeridas
 
-| Variable | Requerido | Descripción |
-|----------|-----------|-------------|
-| `SECRET_KEY` | ✅ Producción | Clave criptográfica de 64 caracteres hex |
-| `REDIS_URL` | Recomendado | URL de Redis para rate limiting |
-| `HEALTH_CHECK_TOKEN` | Opcional | Token para proteger /healthz |
+| Variable | Producción | Descripción |
+|----------|------------|-------------|
+| `SECRET_KEY` | ✅ **Obligatorio** | Clave criptográfica de 64 caracteres hex |
+| `REDIS_URL` | ✅ **Obligatorio** | URL de Redis para rate limiting |
+| `HEALTH_CHECK_TOKEN` | ✅ **Obligatorio** | Token para proteger /healthz |
+

@@ -23,24 +23,9 @@
             }
         },
         {
-            "src": "/robots.txt",
-            "dest": "/static/robots.txt",
-            "headers": {
-                "Cache-Control": "public, max-age=86400"
-            }
-        },
-        {
             "src": "/manifest.json",
             "dest": "/static/manifest.json",
             "headers": {
-                "Cache-Control": "public, max-age=86400"
-            }
-        },
-        {
-            "src": "/.well-known/security.txt",
-            "dest": "/static/.well-known/security.txt",
-            "headers": {
-                "Content-Type": "text/plain; charset=utf-8",
                 "Cache-Control": "public, max-age=86400"
             }
         },

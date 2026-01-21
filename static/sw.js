@@ -1,15 +1,18 @@
 /**
  * Service Worker - Deploy Template PWA
- * Version: 1.1.0
+ * Version: 1.2.0
  * =============================================================================
  * Service worker for PWA installation support.
  * Uses Cache-First for static assets, Network-First for dynamic content.
  * 
  * SECURITY: Does NOT cache dynamic routes (/) to prevent stale content issues.
+ * 
+ * VERSIONING: Increment CACHE_NAME version (v5 → v6) when static assets change.
+ * This triggers cache invalidation on next page load.
  * =============================================================================
  */
 
-const CACHE_NAME = 'deploy-template-v3';
+const CACHE_NAME = 'deploy-template-v5';
 
 // Only cache truly static assets - NOT dynamic routes like '/'
 const STATIC_ASSETS = [

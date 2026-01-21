@@ -266,6 +266,16 @@ class TestConfiguration:
         """CSRF debe estar habilitado."""
         assert app.config['WTF_CSRF_ENABLED'] is True
 
+    def test_site_name_validation(self, monkeypatch):
+        """SITE_NAME con caracteres maliciosos debe ser rechazado."""
+        monkeypatch.setenv('SITE_NAME', '<script>alert(1)</script>')
+        import importlib
+        import app as app_module
+        importlib.reload(app_module)
+        
+        # The malicious value should be rejected, default used
+        assert app_module.SITE_NAME == 'VercelDeploy'
+
 
 # ==============================================================================
 # Tests de Seguridad
@@ -442,6 +452,11 @@ class TestProductionSimulation:
             for header in required_headers:
                 assert header in response.headers, f"{header} missing in {endpoint}"
 
+    def test_server_header_not_present(self, client):
+        """El header Server no debe estar presente (fingerprinting prevention)."""
+        response = client.get('/')
+        assert 'Server' not in response.headers, "Server header should be removed"
+
     def test_no_placeholder_domains_in_static(self):
         """Los archivos estáticos no deben contener dominios placeholder."""
         import os
@@ -450,7 +465,8 @@ class TestProductionSimulation:
             'static'
         )
         
-        placeholder_patterns = ['example.com', 'example.vercel.app']
+        # Patrones que indican configuración incompleta
+        placeholder_patterns = ['example.com', 'example.vercel.app', 'TU-DOMINIO', 'YOUR-USERNAME']
         files_to_check = [
             'robots.txt',
             'sitemap.xml',
@@ -464,3 +480,59 @@ class TestProductionSimulation:
                     content = f.read()
                 for pattern in placeholder_patterns:
                     assert pattern not in content, f"Placeholder '{pattern}' found in {filename}"
+
+
+# ==============================================================================
+# Tests de Rutas SEO/Seguridad
+# ==============================================================================
+class TestSEORoutes:
+    """Tests para rutas SEO y seguridad estándar."""
+
+    def test_robots_txt_accessible(self, client):
+        """robots.txt debe ser accesible desde raíz."""
+        response = client.get('/robots.txt')
+        assert response.status_code == 200
+        assert b'User-agent' in response.data
+
+    def test_robots_txt_contains_sitemap(self, client):
+        """robots.txt debe incluir referencia a sitemap."""
+        response = client.get('/robots.txt')
+        assert b'Sitemap:' in response.data
+
+    def test_sitemap_xml_accessible(self, client):
+        """sitemap.xml debe ser accesible desde raíz."""
+        response = client.get('/sitemap.xml')
+        assert response.status_code == 200
+        assert b'urlset' in response.data
+
+    def test_sitemap_xml_contains_valid_url(self, client):
+        """sitemap.xml debe contener URL válida con lastmod."""
+        response = client.get('/sitemap.xml')
+        assert b'<loc>' in response.data
+        assert b'<lastmod>' in response.data
+        assert b'<priority>' in response.data
+
+    def test_security_txt_accessible(self, client):
+        """security.txt debe ser accesible en .well-known."""
+        response = client.get('/.well-known/security.txt')
+        assert response.status_code == 200
+        assert b'Contact:' in response.data
+
+    def test_security_txt_contains_required_fields(self, client):
+        """security.txt debe tener campos RFC 9116 requeridos."""
+        response = client.get('/.well-known/security.txt')
+        assert b'Expires:' in response.data
+        assert b'Canonical:' in response.data
+
+    def test_dynamic_urls_use_base_url(self, client, monkeypatch):
+        """Las URLs dinámicas deben usar BASE_URL configurado."""
+        monkeypatch.setenv('BASE_URL', 'https://example.com')
+        # Need to reload the module to pick up env change
+        import importlib
+        import app as app_module
+        importlib.reload(app_module)
+        
+        with app_module.app.test_client() as test_client:
+            response = test_client.get('/robots.txt')
+            assert b'https://example.com/sitemap.xml' in response.data
+

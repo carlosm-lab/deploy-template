@@ -15,20 +15,19 @@ Plantilla profesional para pre-desplegar en Vercel y reservar dominios.
 - ✅ CSRF preparado para formularios futuros
 - ✅ PWA con Service Worker (Network-First para contenido dinámico)
 - ✅ Página offline.html para PWA
+- ✅ URLs dinámicas para SEO files (robots.txt, sitemap.xml, security.txt)
 
 ## Rate Limiting en Producción
 
-En desarrollo local, Flask-Limiter provee rate limiting en memoria. **En producción (Vercel)**, debes configurar rate limiting a nivel de plataforma:
+En desarrollo local, Flask-Limiter provee rate limiting en memoria. **En producción (Vercel)**, Redis es **obligatorio**:
 
-### Opción 1: Vercel Dashboard (Recomendado)
-1. Ve a **Project Settings > Security > Rate Limiting**
-2. Configura reglas por ruta o IP
+> ⚠️ **La aplicación FALLARÁ al iniciar si `REDIS_URL` no está configurado en producción.**
 
-### Opción 2: Vercel Firewall (Enterprise)
-Para reglas avanzadas, usa Vercel Firewall en el plan Enterprise.
-
-### Opción 3: Redis (Upstash)
-Para rate limiting distribuido, configura `ENABLE_RATE_LIMIT=true` y usa Upstash Redis como storage.
+### Configuración con Upstash (Gratis)
+1. Crear cuenta en [upstash.com](https://upstash.com/)
+2. Crear base de datos Redis
+3. Copiar "Redis URL" (formato: `redis://default:xxx@xxx.upstash.io:6379`)
+4. Agregar como `REDIS_URL` en Vercel Dashboard
 
 ## Estructura
 
@@ -54,19 +53,25 @@ deploy/
 
 ## Variables de Entorno
 
-| Variable | Requerida | Descripción |
-|----------|-----------|-------------|
-| `SECRET_KEY` | ✅ **Sí** | Clave para firmar sesiones |
-| `HEALTH_CHECK_TOKEN` | ❌ No | Token para proteger `/healthz` |
-| `FLASK_DEBUG` | ❌ No | Modo debug (default: false) |
-| `LOG_LEVEL` | ❌ No | Nivel de logging (default: INFO) |
-| `ENABLE_RATE_LIMIT` | ❌ No | Forzar rate limit en producción |
-| `SITE_NAME` | ❌ No | Nombre del sitio (default: VercelDeploy) |
+| Variable | Producción | Descripción |
+|----------|------------|-------------|
+| `SECRET_KEY` | ✅ **Obligatorio** | Clave para firmar sesiones |
+| `REDIS_URL` | ✅ **Obligatorio** | URL de Redis para rate limiting |
+| `HEALTH_CHECK_TOKEN` | ✅ **Obligatorio** | Token para proteger `/healthz` |
+| `BASE_URL` | ⚠️ **Recomendado** | URL base para SEO files (robots.txt, sitemap.xml) |
+| `SITE_NAME` | ❌ Opcional | Nombre del sitio (default: VercelDeploy) |
+| `SECURITY_CONTACT` | ❌ Opcional | URL de contacto para security.txt |
+| `FLASK_DEBUG` | ❌ Opcional | Modo debug (default: false) |
+| `LOG_LEVEL` | ❌ Opcional | Nivel de logging (default: INFO) |
 
-### Generar SECRET_KEY
+### Generar Tokens
 
 ```bash
+# SECRET_KEY (64 caracteres hex)
 python -c "import secrets; print(secrets.token_hex(32))"
+
+# HEALTH_CHECK_TOKEN (32 caracteres hex)
+python -c "import secrets; print(secrets.token_hex(16))"
 ```
 
 ## Desarrollo Local
