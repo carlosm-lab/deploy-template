@@ -1,0 +1,302 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Sitio en Construcción</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="Estamos construyendo algo increíble. Nuestro sitio estará disponible muy pronto." />
+    <!-- Production ready: allow indexing -->
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sitio en Construcción" />
+    <meta property="og:description"
+        content="Estamos construyendo algo increíble. Nuestro sitio estará disponible muy pronto." />
+    <meta property="og:locale" content="es_ES" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Sitio en Construcción" />
+    <meta name="twitter:description"
+        content="Estamos construyendo algo increíble. Nuestro sitio estará disponible muy pronto." />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json" />
+    <meta name="theme-color" content="#3b82f6" />
+
+    <!-- Fonts (Local - CSP compliant) -->
+    <link rel="stylesheet" href="/static/css/fonts.css" />
+
+    <!-- Material Symbols styles loaded from main.css (CSP compliant) -->
+
+    <!-- Tailwind CSS (compilado localmente) -->
+    <link rel="stylesheet" href="/static/css/tailwind.css" />
+
+    <!-- Custom CSS (includes font fallback) -->
+    <link rel="stylesheet" href="/static/css/main.css" />
+
+    
+</head>
+
+<body class="font-sans min-h-screen flex flex-col overflow-x-hidden text-slate-700">
+    
+<!-- SVG Definitions (global) -->
+<!-- SVG Definitions for gradients and filters -->
+<svg class="absolute" height="0" width="0">
+    <defs>
+        <linearGradient id="grad-steel" x1="0%" x2="100%" y1="0%" y2="100%">
+            <stop offset="0%" stop-color="#E2E8F0"></stop>
+            <stop offset="50%" stop-color="#94A3B8"></stop>
+            <stop offset="100%" stop-color="#475569"></stop>
+        </linearGradient>
+        <linearGradient id="grad-brass" x1="0%" x2="100%" y1="0%" y2="100%">
+            <stop offset="0%" stop-color="#FCD34D"></stop>
+            <stop offset="50%" stop-color="#D97706"></stop>
+            <stop offset="100%" stop-color="#92400E"></stop>
+        </linearGradient>
+        <filter height="140%" id="dropShadow" width="140%" x="-20%" y="-20%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3"></feGaussianBlur>
+            <feOffset dx="2" dy="4" result="offsetblur"></feOffset>
+            <feComponentTransfer>
+                <feFuncA slope="0.3" type="linear"></feFuncA>
+            </feComponentTransfer>
+            <feMerge>
+                <feMergeNode></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+        </filter>
+    </defs>
+</svg>
+
+<!-- Animated Gears Background (fixed position) -->
+<div class="fixed inset-0 overflow-visible pointer-events-none z-0">
+    <!-- Animated Gears Background -->
+<div class="absolute top-10 right-[-5%] opacity-80 animate-[gear-spin-slow_40s_linear_infinite]">
+    <svg class="w-96 h-96 drop-shadow-2xl" style="filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));"
+        viewBox="0 0 24 24">
+        <path
+            d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
+            fill="url(#grad-steel)"></path>
+        <path clip-rule="evenodd"
+            d="M20.1254 15.6568L22 14.899V9.10095L20.1254 8.34315C20.0456 7.91427 19.9272 7.49525 19.7718 7.0901L20.9497 5.43715L16.8492 1.33665L15.1963 2.51455C14.7911 2.35912 14.3721 2.24077 13.9432 2.16095L13.1854 0.286377H7.38735L6.62955 2.16095C6.20067 2.24077 5.78165 2.35912 5.3765 2.51455L3.72355 1.33665L-0.376953 5.43715L0.800972 7.0901C0.645547 7.49525 0.527197 7.91427 0.447372 8.34315L-1.42725 9.10095V14.899L0.447372 15.6568C0.527197 16.0857 0.645547 16.5047 0.800972 16.9099L-0.376953 18.5628L3.72355 22.6633L5.3765 21.4854C5.78165 21.6409 6.20067 21.7592 6.62955 21.839L7.38735 23.7136H13.1854L13.9432 21.839C14.3721 21.7592 14.7911 21.6409 15.1963 21.4854L16.8492 22.6633L20.9497 18.5628L19.7718 16.9099C19.9272 16.5047 20.0456 16.0857 20.1254 15.6568ZM12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z"
+            fill="url(#grad-steel)" fill-rule="evenodd"></path>
+    </svg>
+</div>
+<div class="absolute bottom-[-10%] left-[-5%] opacity-60 animate-[gear-spin-slow_60s_linear_infinite_reverse]">
+    <svg class="w-[500px] h-[500px]" style="filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));" viewBox="0 0 24 24">
+        <path
+            d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
+            fill="url(#grad-brass)"></path>
+        <path clip-rule="evenodd"
+            d="M19.4244 14.3168L21.4998 13.4776V9.52243L19.4244 8.68319C19.3361 8.20844 19.205 7.7446 19.033 7.29612L20.3369 5.46633L17.4661 2.59556L15.6363 3.89945C15.1879 3.72738 14.724 3.59633 14.2493 3.508L13.41 1.43262H9.45484L8.61559 3.508C8.14084 3.59633 7.677 3.72738 7.22852 3.89945L5.39873 2.59556L2.52795 5.46633L3.83185 7.29612C3.65978 7.7446 3.52873 8.20844 3.4404 8.68319L1.365 9.52243V13.4776L3.4404 14.3168C3.52873 14.7916 3.65978 15.2554 3.83185 15.7039L2.52795 17.5337L5.39873 20.4044L7.22852 19.1006C7.677 19.2726 8.14084 19.4037 8.61559 19.492L9.45484 21.5674H13.41L14.2493 19.492C14.724 19.4037 15.1879 19.2726 15.6363 19.1006L17.4661 20.4044L20.3369 17.5337L19.033 15.7039C19.205 15.2554 19.3361 14.7916 19.4244 14.3168ZM12 16.5C14.4853 16.5 16.5 14.4853 16.5 12C16.5 9.51472 14.4853 7.5 12 7.5C9.51472 7.5 7.5 9.51472 7.5 12C7.5 14.4853 9.51472 16.5 12 16.5Z"
+            fill="url(#grad-brass)" fill-rule="evenodd"></path>
+    </svg>
+</div>
+</div>
+
+<!-- Main Content -->
+<main class="flex-grow flex items-center justify-center relative px-4 py-12 w-full z-10 min-h-screen">
+    <!-- Glass Panel Content -->
+    <div
+        class="relative w-full max-w-[1100px] glass-panel rounded-3xl shadow-glass flex flex-col md:flex-row z-10 overflow-hidden ring-1 ring-white/60">
+        <!-- Left Side - Text Content -->
+        <div class="flex-1 p-10 md:p-14 flex flex-col justify-center relative z-20">
+            <div class="relative z-10">
+                <!-- Status Badge -->
+                <div
+                    class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100/80 border border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-8 shadow-sm backdrop-blur-sm">
+                    <span
+                        class="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.6)]"></span>
+                    Estado: En Desarrollo
+                </div>
+
+                <!-- Title -->
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] mb-6 tracking-tight">
+                    SITIO EN <br />
+                    <span class="text-metallic drop-shadow-sm">CONSTRUCCIÓN</span>
+                </h1>
+
+                <!-- Description -->
+                <p class="text-slate-500 text-lg leading-relaxed mb-10 max-w-md font-medium">
+                    Estamos ensamblando la próxima versión. Nuestros desarrolladores están trabajando a plena
+                    capacidad.
+                </p>
+
+                <!-- Status Panel -->
+                <!-- System Status Panel -->
+
+
+
+<div class="bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-lg">
+    <div class="flex justify-between items-end mb-4">
+        <span class="text-slate-600 font-semibold flex items-center gap-2 text-sm tracking-wide">
+            <span class="material-symbols-outlined text-blue-600"
+                style="font-variation-settings: 'FILL' 1;">dataset</span>
+            ESTADO DE SISTEMA
+        </span>
+        <span class="text-blue-600 font-bold text-xl drop-shadow-sm">75%</span>
+    </div>
+    <div class="h-5 w-full bg-slate-200/50 rounded-full p-1 shadow-inner ring-1 ring-white/50 relative overflow-hidden">
+        <div class="progress-bar h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.4)] overflow-hidden"
+            style="width: 75%;">
+        </div>
+    </div>
+    <div class="flex flex-wrap gap-3 mt-5">
+        <div
+            class="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-slate-500 bg-white/60 px-3 py-1.5 rounded-lg shadow-sm border border-white/50">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.6)]"></span> Backend
+        </div>
+        <div
+            class="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-slate-500 bg-white/60 px-3 py-1.5 rounded-lg shadow-sm border border-white/50">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.6)]"></span> Database
+        </div>
+        <div
+            class="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-blue-600 bg-blue-50/60 px-3 py-1.5 rounded-lg shadow-sm border border-blue-100">
+            <span class="material-symbols-outlined text-sm animate-spin">settings</span> Compilando
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+
+        <!-- Right Side - Robot Animation -->
+        <div
+            class="w-full md:w-[50%] bg-gradient-to-br from-slate-50 to-slate-200/50 relative min-h-[500px] flex items-center justify-center overflow-hidden border-l border-white/40 shadow-inner">
+            <div
+                class="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[80%] bg-blue-400/10 blur-[80px] rounded-full pointer-events-none">
+            </div>
+
+            <!-- Robot -->
+            <!-- 3D Robot Animation -->
+<div
+    class="relative w-full h-full flex items-center justify-center animate-[float-3d_6s_ease-in-out_infinite] perspective-[1000px]">
+    <div class="relative w-64 h-80 z-20">
+        <!-- Robot Head -->
+        <div
+            class="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-32 bg-steel-gradient rounded-[2rem] z-30 metal-shadow flex flex-col items-center justify-center border-t border-white/80">
+            <!-- Antenna -->
+            <div
+                class="absolute -top-10 left-1/2 -translate-x-1/2 w-2 h-10 bg-gradient-to-r from-slate-400 to-slate-200 rounded-full shadow-lg">
+            </div>
+            <div
+                class="absolute -top-12 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-500 rounded-full shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-pulse border border-red-400">
+                <div class="absolute top-1 left-1 w-1.5 h-1.5 bg-white/60 rounded-full"></div>
+            </div>
+
+            <!-- Face Screen -->
+            <div
+                class="w-32 h-20 bg-slate-800 rounded-2xl shadow-[inset_0_0_10px_black] flex items-center justify-center gap-4 relative overflow-hidden border-b border-white/10">
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent to-blue-500/10 pointer-events-none">
+                </div>
+                <!-- Eyes -->
+                <div class="w-8 h-8 bg-cyan-400 rounded-full shadow-[0_0_20px_#22d3ee] animate-[eye-blink_4s_infinite]">
+                    <div class="w-2 h-2 bg-white absolute top-1.5 left-1.5 rounded-full"></div>
+                </div>
+                <div class="w-8 h-8 bg-cyan-400 rounded-full shadow-[0_0_20px_#22d3ee] animate-[eye-blink_4s_infinite]">
+                    <div class="w-2 h-2 bg-white absolute top-1.5 left-1.5 rounded-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Neck -->
+        <div
+            class="absolute top-28 left-1/2 -translate-x-1/2 w-20 h-10 bg-gradient-to-b from-slate-600 to-slate-800 z-10 rounded-full shadow-inner">
+            <div class="w-full h-2 bg-black/20 mt-2"></div>
+            <div class="w-full h-2 bg-black/20 mt-2"></div>
+        </div>
+
+        <!-- Body -->
+        <div
+            class="absolute top-36 left-1/2 -translate-x-1/2 w-48 h-44 bg-steel-gradient rounded-[2.5rem] z-20 metal-shadow flex flex-col items-center pt-8 border-t border-white/60">
+            <div
+                class="w-32 h-24 bg-gradient-to-br from-slate-200 to-slate-300 rounded-xl shadow-[inset_1px_1px_3px_white,inset_-1px_-1px_3px_rgba(0,0,0,0.1)] flex items-center justify-center border border-white/50">
+                <div class="flex gap-3">
+                    <div class="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e] border border-green-400">
+                    </div>
+                    <div
+                        class="w-4 h-4 rounded-full bg-yellow-400 shadow-[0_0_8px_#facc15] border border-yellow-300 animate-pulse">
+                    </div>
+                    <div class="w-4 h-4 rounded-full bg-slate-300 shadow-inner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Left Arm -->
+        <div class="absolute top-40 -left-6 w-16 h-32 origin-top-right animate-[arm-pivot_4s_ease-in-out_infinite]">
+            <div
+                class="w-12 h-12 rounded-full bg-gradient-to-br from-slate-300 to-slate-500 shadow-lg absolute right-0 top-0 border border-white/40">
+            </div>
+            <div
+                class="w-8 h-24 bg-gradient-to-r from-slate-300 via-slate-100 to-slate-300 absolute right-2 top-6 rounded-b-2xl shadow-lg border-x border-slate-400">
+            </div>
+            <div class="absolute bottom-[-10px] right-0 w-12 h-10 border-4 border-slate-500 rounded-b-xl border-t-0">
+            </div>
+            <!-- Code Block -->
+            <div
+                class="absolute -bottom-16 -right-4 w-16 h-16 bg-blue-400/20 backdrop-blur-md border border-white/60 rounded-lg shadow-[0_10px_20px_rgba(59,130,246,0.3)] transform rotate-12 flex items-center justify-center">
+                <span class="text-white/80 font-mono text-xs font-bold">&lt;/&gt;</span>
+                <div
+                    class="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-transparent via-white/40 to-transparent">
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Arm -->
+        <div
+            class="absolute top-40 -right-6 w-16 h-32 origin-top-left animate-[arm-pivot_4s_ease-in-out_infinite_reverse]">
+            <div
+                class="w-12 h-12 rounded-full bg-gradient-to-br from-slate-300 to-slate-500 shadow-lg absolute left-0 top-0 border border-white/40">
+            </div>
+            <div
+                class="w-8 h-24 bg-gradient-to-r from-slate-300 via-slate-100 to-slate-300 absolute left-2 top-6 rounded-b-2xl shadow-lg border-x border-slate-400">
+            </div>
+            <div class="absolute bottom-[-10px] left-0 w-12 h-10 border-4 border-slate-500 rounded-b-xl border-t-0">
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Code Blocks -->
+    <div
+        class="absolute top-20 right-10 w-12 h-12 bg-orange-400/20 backdrop-blur-md border border-white/60 rounded-lg shadow-[0_10px_20px_rgba(249,115,22,0.2)] animate-[float-3d_4s_ease-in-out_infinite_reverse] flex items-center justify-center rotate-12 delay-700">
+        <span class="text-orange-500 font-bold">{}</span>
+    </div>
+    <div
+        class="absolute bottom-32 left-10 w-10 h-10 bg-purple-400/20 backdrop-blur-md border border-white/60 rounded-lg shadow-[0_10px_20px_rgba(168,85,247,0.2)] animate-[float-3d_5s_ease-in-out_infinite] flex items-center justify-center -rotate-12">
+        <span class="text-purple-500 font-bold">#</span>
+    </div>
+</div>
+
+            <!-- Shadow -->
+            <div
+                class="absolute bottom-10 left-1/2 -translate-x-1/2 w-48 h-8 bg-black/10 blur-xl rounded-[100%] animate-[float-shadow_6s_ease-in-out_infinite]">
+            </div>
+        </div>
+    </div>
+</main>
+
+
+    <!-- Custom JavaScript -->
+    <script src="/static/js/main.js"></script>
+
+    <!-- Service Worker Registration (CSP compliant - external file) -->
+    <script src="/static/js/sw-register.js"></script>
+
+    
+
+    <!-- L6: Fallback for users with JavaScript disabled -->
+    <noscript>
+        <div style="background: #fef3c7; color: #92400e; padding: 1rem; text-align: center; font-family: sans-serif;">
+            Este sitio funciona mejor con JavaScript habilitado.
+        </div>
+    </noscript>
+</body>
+
+</html>

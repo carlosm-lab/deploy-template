@@ -1,6 +1,6 @@
 <!-- System Status Panel -->
 {# Sanitize progress_value: force integer to prevent XSS if passed from user input #}
-{% set progress = (progress_value|default(85)|int)|abs %}
+{% set progress = (progress_value|default(75)|int)|abs %}
 {% set progress = [progress, 100]|min %}
 <div class="bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-lg">
     <div class="flex justify-between items-end mb-4">
@@ -12,10 +12,8 @@
         <span class="text-blue-600 font-bold text-xl drop-shadow-sm">{{ progress }}%</span>
     </div>
     <div class="h-5 w-full bg-slate-200/50 rounded-full p-1 shadow-inner ring-1 ring-white/50 relative overflow-hidden">
-        <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.4)] relative overflow-hidden"
-            style="width: {{ progress }}%">
-            <div class="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent"></div>
-            <div class="progress-stripes absolute inset-0"></div>
+        <div
+            class="progress-bar w-progress-75 h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.4)] overflow-hidden">
         </div>
     </div>
     <div class="flex flex-wrap gap-3 mt-5">

@@ -8,7 +8,8 @@
    ====================================== */
 
 body {
-    background: radial-gradient(circle at center top, #f8fafc, #cbd5e1);
+    background: transparent;
+    background-image: radial-gradient(circle at center top, rgba(248, 250, 252, 0.9), rgba(203, 213, 225, 0.7));
 }
 
 /* Font Fallback Strategy - moved from inline style */
@@ -89,6 +90,19 @@ body {
             transparent);
     background-size: 1rem 1rem;
     animation: stripes-move 3s linear infinite reverse;
+}
+
+/* Force progress bar width from inline style - DO NOT add width rules here */
+.progress-bar {
+    /* Width is controlled via inline style in template */
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+
+/* Progress bar width - Using CSS class instead of inline style because CSP blocks inline styles */
+.w-progress-75 {
+    width: 75% !important;
+    max-width: 75% !important;
 }
 
 /* ======================================

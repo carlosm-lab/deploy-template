@@ -9,7 +9,7 @@
     font-family: 'Material Symbols Outlined';
     font-style: normal;
     font-weight: 400;
-    font-display: swap;
+    font-display: block;
     src: url('/static/fonts/MaterialSymbolsOutlined.woff2') format('woff2');
 }
 

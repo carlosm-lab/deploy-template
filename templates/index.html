@@ -1,32 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Sitio en Construcción 3D{% endblock %}
+{% block title %}Sitio en Construcción{% endblock %}
 
 {% block content %}
-<!-- Header -->
-<header class="w-full px-8 py-6 flex items-center justify-between absolute top-0 z-30">
-    <div class="flex items-center gap-3">
-        <div
-            class="size-10 bg-gradient-to-br from-white to-slate-200 rounded-xl flex items-center justify-center shadow-lg border border-white/50">
-            <span
-                class="material-symbols-outlined text-3xl text-slate-600 drop-shadow-sm">precision_manufacturing</span>
-        </div>
-        <h2 class="text-slate-700 text-xl font-bold tracking-tight drop-shadow-sm">Vercel<span
-                class="text-slate-400">Deploy</span></h2>
-    </div>
-</header>
+<!-- SVG Definitions (global) -->
+{% include "components/svg_defs.html" %}
+
+<!-- Animated Gears Background (fixed position) -->
+<div class="fixed inset-0 overflow-visible pointer-events-none z-0">
+    {% include "components/animated_gears.html" %}
+</div>
 
 <!-- Main Content -->
-<main class="flex-grow flex items-center justify-center relative px-4 py-24 w-full">
-    <!-- Background Decorations -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <!-- SVG Definitions -->
-        {% include "components/svg_defs.html" %}
-
-        <!-- Animated Gears -->
-        {% include "components/animated_gears.html" %}
-    </div>
-
+<main class="flex-grow flex items-center justify-center relative px-4 py-12 w-full z-10 min-h-screen">
     <!-- Glass Panel Content -->
     <div
         class="relative w-full max-w-[1100px] glass-panel rounded-3xl shadow-glass flex flex-col md:flex-row z-10 overflow-hidden ring-1 ring-white/60">
@@ -49,7 +35,7 @@
 
                 <!-- Description -->
                 <p class="text-slate-500 text-lg leading-relaxed mb-10 max-w-md font-medium">
-                    Estamos ensamblando la próxima versión. Nuestros sistemas automatizados están trabajando a plena
+                    Estamos ensamblando la próxima versión. Nuestros desarrolladores están trabajando a plena
                     capacidad.
                 </p>
 
@@ -75,7 +61,4 @@
         </div>
     </div>
 </main>
-
-<!-- Footer -->
-{% include "components/footer.html" %}
 {% endblock %}

@@ -363,8 +363,16 @@ video {
     position: static
 }
 
+.fixed {
+    position: fixed
+}
+
 .absolute {
     position: absolute
+}
+
+.overflow-visible {
+    overflow: visible
 }
 
 .relative {

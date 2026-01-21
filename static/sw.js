@@ -22,7 +22,7 @@
  * - [ ] Did you add new static files?
  * - [ ] If yes to either, INCREMENT the version number below.
  */
-const CACHE_NAME = 'deploy-template-v6';
+const CACHE_NAME = 'deploy-template-v9';
 
 // Only cache truly static assets - NOT dynamic routes like '/'
 const STATIC_ASSETS = [
