@@ -347,25 +347,21 @@ def ready():
     Readiness check endpoint - verifies system can serve traffic.
     Protected by optional HEALTH_CHECK_TOKEN environment variable.
     
-    Unlike /healthz (liveness), this checks that dependencies are ready.
+    Unlike /healthz (liveness), this indicates whether the app
+    is configured and ready to handle requests properly.
     Useful for load balancers and orchestrators.
+    
+    Note: For this template, readiness means configuration is valid.
+    In a full application, this would verify database connections, etc.
     """
     checks = {'app': 'ok'}
-    all_ready = True
     
-    # Check Redis connection if configured
-    if REDIS_URL:
-        try:
-            # Limiter already has connection, just verify it's responsive
-            checks['redis'] = 'ready'
-        except Exception:
-            checks['redis'] = 'error'
-            all_ready = False
-    else:
-        checks['redis'] = 'not_configured'
+    # Redis check: reports configuration status
+    # In production, REDIS_URL is required so this will be 'configured'
+    checks['redis'] = 'configured' if REDIS_URL else 'not_configured'
     
-    status_code = 200 if all_ready else 503
-    return {'status': 'ready' if all_ready else 'not_ready', 'checks': checks}, status_code
+    # All checks pass if we reach this point (startup validations passed)
+    return {'status': 'ready', 'checks': checks}, 200
 
 
 @app.route('/status')
