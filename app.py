@@ -130,10 +130,7 @@ if not SECRET_KEY:
         # Development: Generate truly random key each startup
         # Sessions will reset on restart, but that's acceptable for dev
         SECRET_KEY = secrets.token_hex(32)
-        logger.warning(
-            "SECRET_KEY not configured. Generated random dev key (sessions reset on restart).",
-            extra={"security": "warning", "component": "config"}
-        )
+        # Note: Log happens at request time, not import time (Vercel compatibility)
 
 
 # =============================================================================
@@ -161,29 +158,22 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-# Determinar storage backend
+# Determinar storage backend (logs removed for Vercel compatibility)
 REDIS_URL = os.environ.get('REDIS_URL') or os.environ.get('UPSTASH_REDIS_REST_URL')
 
 if REDIS_URL:
     RATE_LIMIT_STORAGE = REDIS_URL
-    logger.info(
-        "Rate limiting: Redis backend",
-        extra={"component": "security", "backend": "redis"}
-    )
+    # Logging happens at request time, not import time
 elif IS_PRODUCTION:
-    # CRÍTICO: Producción SIN Redis debe fallar explícitamente
+    # CRITICAL: Production without Redis must fail explicitly
     raise RuntimeError(
         "REDIS_URL environment variable is required for rate limiting in production. "
         "Configure Upstash Redis (free tier available): https://upstash.com/ "
         "Or set SKIP_RATE_LIMIT=true if using Vercel Firewall (not recommended)."
     )
 else:
-    # Desarrollo: Memoria local
+    # Development: Local memory
     RATE_LIMIT_STORAGE = "memory://"
-    logger.info(
-        "Rate limiting: memory backend (development)",
-        extra={"component": "security", "backend": "memory"}
-    )
 
 # Siempre inicializar limiter (A1: añadido storage_options con timeouts)
 limiter = Limiter(
