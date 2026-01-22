@@ -55,6 +55,11 @@
     <!-- Service Worker Registration (CSP compliant - external file) -->
     <script src="{{ url_for('static', filename='js/sw-register.js') }}"></script>
 
+    <!-- Lottie Animation Library -->
+    <script src="{{ url_for('static', filename='js/lottie.min.js') }}"></script>
+    <!-- Robot Animation -->
+    <script src="{{ url_for('static', filename='js/robot.js') }}"></script>
+
     {% block extra_scripts %}{% endblock %}
 
     <!-- L6: Fallback for users with JavaScript disabled -->
