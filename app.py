@@ -690,15 +690,15 @@ def robots():
     # M1-A02: Configurable disallow paths via environment variable
     # Default paths that should never be crawled
     default_disallow = ['/healthz', '/ready', '/status']
-    
+
     # Additional paths from env (comma-separated)
     extra_disallow_raw = os.environ.get('ROBOTS_DISALLOW', '')
     extra_disallow = [p.strip() for p in extra_disallow_raw.split(',') if p.strip()]
-    
+
     # Merge and deduplicate
     all_disallow = list(dict.fromkeys(default_disallow + extra_disallow))
     disallow_lines = '\n'.join(f'Disallow: {path}' for path in all_disallow)
-    
+
     content = f"""# robots.txt
 User-agent: *
 Allow: /
