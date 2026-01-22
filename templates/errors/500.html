@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "errors/error_base.html" %}
 
 {% block title %}Error del servidor - 500{% endblock %}
 
@@ -49,6 +49,5 @@
         </div>
     </div>
 </main>
-<!-- CSP Compliant: External script for button handlers -->
-<script src="{{ url_for('static', filename='js/error-handlers.js') }}"></script>
+{# Note: error-handlers.js is loaded by error_base.html via extra_scripts block #}
 {% endblock %}

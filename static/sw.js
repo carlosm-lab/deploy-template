@@ -1,34 +1,62 @@
 /**
  * Service Worker - Deploy Template PWA
- * Version: 1.3.0
+ * Version: 1.5.0
  * =============================================================================
  * Service worker for PWA installation support.
  * Uses Cache-First for static assets, Network-First for dynamic content.
  * 
  * SECURITY: Does NOT cache dynamic routes (/) to prevent stale content issues.
  * 
- * VERSIONING: Uses deployment timestamp for automatic cache invalidation.
- * Cache is automatically invalidated on each deploy (no manual version bump needed).
+ * VERSIONING: Cache invalidation uses version + timestamp.
  * =============================================================================
  */
 
 /**
- * CACHE VERSIONING:
- * Now uses automatic versioning based on deploy timestamp.
- * Format: deploy-template-v{major}-{timestamp}
+ * CACHE VERSIONING STRATEGY (A3: Enhanced Documentation):
  * 
- * Manual override: Set window.SW_CACHE_VERSION before SW registration
- * to force a specific version (useful for debugging).
+ * The cache name combines:
+ * 1. CACHE_VERSION: Increment for breaking changes (CSS/JS structure changes)
+ * 2. DEPLOY_HASH: Updated automatically on each Vercel deploy
+ * 
+ * HOW TO UPDATE:
+ * ==============
+ * 
+ * AUTOMATIC (GitHub Actions - RECOMMENDED):
+ * - The CI/CD pipeline automatically updates DEPLOY_HASH on every push
+ * - See .github/workflows/ci.yml for the sed command
+ * 
+ * MANUAL DEPLOYS (Vercel Dashboard/CLI):
+ * - If deploying directly via Vercel without CI:
+ *   1. Update DEPLOY_HASH below with current date: YYYYMMDDHHMM
+ *   2. Or increment CACHE_VERSION for major changes
+ * 
+ * VERIFYING CACHE UPDATE:
+ * - Open browser DevTools > Application > Service Workers
+ * - Check the "Status" shows the new version
+ * - Users will get updated cache on next visit
+ * 
+ * ==============
+ * 
+ * NOTE: If you're seeing stale content, increment CACHE_VERSION.
  */
 
-// Deploy timestamp is injected during build, fallback to Date for dev
-// In production, this file should be processed to include actual deploy time
-// For Vercel: the file modification time changes on each deploy
-const DEPLOY_TIMESTAMP = '20260121';  // Format: YYYYMMDD - Update on significant changes
-const CACHE_VERSION = 10;  // Increment for breaking changes only
-const CACHE_NAME = `deploy-template-v${CACHE_VERSION}-${DEPLOY_TIMESTAMP}`;
+// Cache versioning - DEPLOY_HASH should be updated on each deploy
+// Format: YYYYMMDDHHMM for timestamp-based, or first 8 chars of commit SHA
+const CACHE_VERSION = 14;  // Security audit update 2026-01-21 (Cycle 1)
+const DEPLOY_HASH = '202601220700';  // AUTO-UPDATE: CI should replace this
+const CACHE_NAME = `deploy-template-v${CACHE_VERSION}-${DEPLOY_HASH}`;
+
+// B1: Debug logging flag - set to false for production silence
+const DEBUG_SW = false;  // Set to true only when debugging SW issues
+
+function log(message, ...args) {
+    if (DEBUG_SW) {
+        console.log('[SW]', message, ...args);
+    }
+}
 
 // Only cache truly static assets - NOT dynamic routes like '/'
+// H1-M01: Added lottie, robot, and PWA icons for better offline experience
 const STATIC_ASSETS = [
     '/static/css/main.css',
     '/static/css/tailwind.css',
@@ -38,9 +66,14 @@ const STATIC_ASSETS = [
     '/static/js/sw-register.js',
     '/static/js/offline.js',
     '/static/js/error-handlers.js',
+    '/static/js/lottie.min.js',
+    '/static/js/robot.js',
+    '/static/js/robot-animation.json',
     '/static/favicon.svg',
     '/static/manifest.json',
     '/static/offline.html',
+    '/static/icons/icon-192.png',
+    '/static/icons/icon-512.png',
 ];
 
 // Install event - cache static assets only
@@ -48,15 +81,15 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('[SW] Caching static assets');
+                log('Caching static assets');
                 return cache.addAll(STATIC_ASSETS);
             })
             .then(() => {
-                console.log('[SW] Installation complete');
+                log('Installation complete');
                 return self.skipWaiting();
             })
             .catch((error) => {
-                console.error('[SW] Installation failed:', error);
+                log('Installation failed:', error);
             })
     );
 });
@@ -70,13 +103,13 @@ self.addEventListener('activate', (event) => {
                     cacheNames
                         .filter((name) => name !== CACHE_NAME)
                         .map((name) => {
-                            console.log('[SW] Deleting old cache:', name);
+                            log('Deleting old cache:', name);
                             return caches.delete(name);
                         })
                 );
             })
             .then(() => {
-                console.log('[SW] Activation complete');
+                log('Activation complete');
                 return self.clients.claim();
             })
     );
@@ -106,7 +139,10 @@ self.addEventListener('fetch', (event) => {
                         return cachedResponse;
                     }
                     return fetch(event.request).then((response) => {
-                        if (!response || response.status !== 200) {
+                        // M1: Only cache valid same-origin responses
+                        // - status 200: successful response
+                        // - type 'basic': same-origin (not opaque/cors/error)
+                        if (!response || response.status !== 200 || response.type !== 'basic') {
                             return response;
                         }
                         const responseToCache = response.clone();

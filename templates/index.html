@@ -61,3 +61,11 @@
     </div>
 </main>
 {% endblock %}
+
+{% block extra_scripts %}
+<!-- M5: Lottie Animation Library (deferred for better LCP - B7) -->
+<!-- Only loaded on index page, not error pages -->
+<script defer src="{{ url_for('static', filename='js/lottie.min.js') }}"></script>
+<!-- Robot Animation (deferred, depends on lottie) -->
+<script defer src="{{ url_for('static', filename='js/robot.js') }}"></script>
+{% endblock %}

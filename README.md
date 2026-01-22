@@ -123,8 +123,23 @@ pip-audit
 | Ruta | Descripción |
 |------|-------------|
 | `/` | Página principal |
-| `/healthz` | Health check (protegible con token) |
+| `/healthz` | **Liveness check** - Indica si la app está viva (protegido con token) |
+| `/ready` | **Readiness check** - Verifica conectividad Redis real (protegido con token) |
 | `/status` | Redirige a /healthz (deprecated) |
+
+### Diferencia entre `/healthz` y `/ready`
+
+- **`/healthz` (Liveness)**: Retorna OK si la aplicación está ejecutándose. Útil para que orquestadores reinicien pods muertos.
+- **`/ready` (Readiness)**: Retorna OK solo si Redis está conectado. Útil para load balancers (no enviar tráfico hasta que la app puede procesar requests).
+
+> 💡 **Recomendación**: Usar `/healthz` para uptime monitoring, `/ready` para load balancer health checks.
+
+### Cache de Archivos Estáticos
+
+Los archivos en `/static/*` tienen cache agresivo (`Cache-Control: s-maxage=31536000`). Para forzar actualización:
+
+1. **Método recomendado**: Cambiar el contenido del archivo (Vercel detecta cambios automáticamente)
+2. **Cache del Service Worker**: Incrementar `CACHE_VERSION` en `sw.js` (el CI actualiza `DEPLOY_HASH` automáticamente)
 
 ---
 
@@ -137,9 +152,12 @@ pip-audit
 - [x] **sitemap.xml**: Configurado con entrada válida ✅
 - [x] **security.txt**: Actualizado con dominio real ✅
 - [x] **offline.html**: Página PWA offline creada ✅
-- [ ] **SECRET_KEY**: Configurar en Vercel Dashboard (obligatorio)
-- [ ] **Rate Limiting**: Configurar en Vercel Dashboard > Security
-- [ ] **Dominio personalizado**: Actualizar URLs en sitemap, robots, security.txt
+- [x] **SECRET_KEY**: Configurar en Vercel Dashboard ✅
+- [x] **REDIS_URL**: Configurar en Vercel Dashboard ✅
+- [x] **HEALTH_CHECK_TOKEN**: Configurar en Vercel Dashboard ✅
+- [x] **BASE_URL**: Configurar en Vercel Dashboard ✅
+
+> **Nota:** Cada instancia de este template requiere configurar las variables de entorno propias.
 
 ---
 

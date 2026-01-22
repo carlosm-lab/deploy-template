@@ -2,6 +2,7 @@
 # Development Dependencies - Flask Deploy Template
 # =============================================================================
 # Install with: pip install -r requirements-dev.txt
+# Last updated: 2026-01-22 (Security audit - Cycle 1 remediation)
 # =============================================================================
 
 # Include production dependencies
@@ -11,11 +12,11 @@
 gunicorn==23.0.0
 
 # Testing
-pytest==8.0.0
-pytest-cov==4.1.0
+pytest==8.3.4
+pytest-cov==6.0.0
 
 # Security Auditing
-pip-audit==2.7.0
+pip-audit==2.10.0
 
 # Linting
-flake8==7.0.0
+flake8==7.1.1

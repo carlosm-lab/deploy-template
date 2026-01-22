@@ -390,6 +390,17 @@ class TestHealthCheckProtection:
                 del os.environ['HEALTH_CHECK_TOKEN']
             importlib.reload(app_module)
 
+    def test_ready_redis_connectivity_check(self, client):
+        """Auditoría Ciclo 1: /ready debe reportar estado de conectividad Redis."""
+        response = client.get('/ready')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'checks' in data
+        assert 'redis' in data['checks']
+        # In development without Redis, should be 'not_configured'
+        # In production with Redis, should be 'connected' or 'error'
+        assert data['checks']['redis'] in ['connected', 'not_configured', 'error']
+
 
 # ==============================================================================
 # Tests de Rate Limiting (Desarrollo)
@@ -501,6 +512,32 @@ class TestTemplates:
         assert 'icons' in manifest
         assert 'start_url' in manifest
         assert len(manifest['icons']) >= 2
+
+    def test_error_base_template_exists(self):
+        """El template error_base.html debe existir (R2: Ciclo 2)."""
+        import os
+        error_base_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'templates', 'errors', 'error_base.html'
+        )
+        assert os.path.exists(error_base_path), "error_base.html is required"
+
+    def test_error_base_has_noindex(self):
+        """error_base.html debe contener meta noindex (B4)."""
+        import os
+        error_base_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'templates', 'errors', 'error_base.html'
+        )
+        with open(error_base_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        assert 'noindex' in content, "error_base.html should have noindex meta tag"
+
+    def test_error_pages_have_noindex(self, client):
+        """Las páginas de error deben tener meta noindex."""
+        response = client.get('/nonexistent-page-xyz-404')
+        assert response.status_code == 404
+        assert b'noindex' in response.data, "404 page should have noindex"
 
 
 # ==============================================================================
@@ -616,6 +653,34 @@ class TestSEORoutes:
             response = test_client.get('/robots.txt')
             assert b'https://example.com/sitemap.xml' in response.data
 
+    def test_robots_txt_configurable_disallow(self, client, monkeypatch):
+        """M1-A02: robots.txt debe soportar ROBOTS_DISALLOW env var."""
+        import importlib
+        import os
+        
+        original_disallow = os.environ.get('ROBOTS_DISALLOW')
+        
+        try:
+            monkeypatch.setenv('ROBOTS_DISALLOW', '/admin,/api/internal')
+            import app as app_module
+            importlib.reload(app_module)
+            
+            with app_module.app.test_client() as test_client:
+                response = test_client.get('/robots.txt')
+                content = response.data.decode('utf-8')
+                # Default disallows should still be present
+                assert 'Disallow: /healthz' in content
+                assert 'Disallow: /ready' in content
+                # Custom disallows should be added
+                assert 'Disallow: /admin' in content
+                assert 'Disallow: /api/internal' in content
+        finally:
+            if original_disallow:
+                os.environ['ROBOTS_DISALLOW'] = original_disallow
+            elif 'ROBOTS_DISALLOW' in os.environ:
+                del os.environ['ROBOTS_DISALLOW']
+            importlib.reload(app_module)
+
 
 # ==============================================================================
 # Tests de CSP Compliance (M6: Validación de archivos HTML)
@@ -717,3 +782,336 @@ class TestSecurityConfiguration:
         for filename in required_files:
             filepath = os.path.join(static_dir, filename)
             assert os.path.exists(filepath), f"Missing required file: {filename}"
+
+
+# ==============================================================================
+# Tests de Validación de Host Header (M5)
+# ==============================================================================
+class TestHostHeaderValidation:
+    """Tests para validación de Host header (M5: prevención de host header injection)."""
+
+    def test_valid_host_allowed(self, client):
+        """Host localhost debe ser permitido en desarrollo."""
+        response = client.get('/', headers={'Host': 'localhost:5000'})
+        # Should not be rejected
+        assert response.status_code != 400
+
+    def test_allowed_hosts_configured(self):
+        """get_allowed_hosts debe retornar lista con localhost en desarrollo."""
+        from app import get_allowed_hosts
+        allowed = get_allowed_hosts()
+        # In development should include localhost
+        assert isinstance(allowed, list)
+        # At minimum should have localhost variants in dev
+        assert len(allowed) >= 1
+
+
+# ==============================================================================
+# Tests Adicionales - Ciclo 1 Auditoría (B4, M2, M3)
+# ==============================================================================
+class TestAuditCycle1Fixes:
+    """Tests para verificar correcciones del Ciclo 1 de auditoría."""
+
+    def test_ipv4_mapped_ipv6_anonymization(self):
+        """B4: IPv4-mapped IPv6 debe ser anonimizada correctamente."""
+        from app import anonymize_ip
+        # IPv4-mapped IPv6 format
+        result = anonymize_ip('::ffff:192.168.1.100')
+        # Should return something anonymized, not the original
+        assert result != '::ffff:192.168.1.100'
+        assert 'invalid' not in result.lower()
+
+    def test_content_type_validation_rejects_invalid(self, client):
+        """M2: POST con Content-Type inválido debe retornar 415."""
+        response = client.post('/', 
+            headers={'Content-Type': 'text/plain'},
+            data='test data')
+        assert response.status_code == 415
+
+    def test_content_type_validation_allows_json(self, client):
+        """M2: POST con Content-Type JSON debe ser aceptado (aunque la ruta no exista)."""
+        response = client.post('/nonexistent', 
+            headers={'Content-Type': 'application/json'},
+            data='{}')
+        # Should get 404 (route not found), not 415 (content type error)
+        assert response.status_code == 404
+
+    def test_content_type_validation_allows_form(self, client):
+        """M2: POST con Content-Type form debe ser aceptado."""
+        response = client.post('/nonexistent', 
+            headers={'Content-Type': 'application/x-www-form-urlencoded'},
+            data='key=value')
+        # Should get 404 (route not found), not 415 (content type error)
+        assert response.status_code == 404
+
+    def test_security_txt_has_stable_expiry(self, client):
+        """M4: security.txt debe tener fecha de expiración válida."""
+        response = client.get('/.well-known/security.txt')
+        assert response.status_code == 200
+        # Check expires is present and in correct format
+        data = response.data.decode('utf-8')
+        assert 'Expires:' in data
+        # Check that year is reasonable (within 2 years)
+        import re
+        expires_match = re.search(r'Expires: (\d{4})-', data)
+        assert expires_match is not None
+        year = int(expires_match.group(1))
+        from datetime import datetime
+        current_year = datetime.now().year
+        assert current_year <= year <= current_year + 2
+
+    def test_csp_header_present(self, client):
+        """A2: CSP header debe estar presente en todas las respuestas."""
+        response = client.get('/')
+        csp = response.headers.get('Content-Security-Policy', '')
+        assert "default-src 'self'" in csp
+        assert "script-src 'self'" in csp
+        assert "frame-ancestors 'none'" in csp
+
+    def test_permissions_policy_header_present(self, client):
+        """M5: Permissions-Policy header debe estar presente."""
+        response = client.get('/')
+        pp = response.headers.get('Permissions-Policy', '')
+        assert 'camera=()' in pp
+        assert 'microphone=()' in pp
+
+
+# ==============================================================================
+# Tests de Correcciones Auditoría Ciclo 1 (2026-01-21)
+# ==============================================================================
+class TestAuditCorrectionsCycle1:
+    """Tests para verificar correcciones de la auditoría Ciclo 1."""
+
+    def test_sanitize_log_string_removes_ansi(self):
+        """M2: sanitize_log_string debe remover secuencias ANSI."""
+        from app import sanitize_log_string
+        # Use actual ANSI escape sequences (ESC = \x1b)
+        dangerous = "malicious\x1b[31mred\x1b[0mnormal"
+        result = sanitize_log_string(dangerous)
+        assert '\x1b' not in result
+        assert 'maliciousrednormal' == result
+
+    def test_sanitize_log_string_removes_control_chars(self):
+        """M2: sanitize_log_string debe remover caracteres de control."""
+        from app import sanitize_log_string
+        # Use actual control characters
+        dangerous = "test\x00null\x07bell\x08backspace"
+        result = sanitize_log_string(dangerous)
+        assert '\x00' not in result
+        assert '\x07' not in result
+        assert '\x08' not in result
+        assert result == "testnullbellbackspace"
+
+    def test_sanitize_log_string_truncates(self):
+        """M2: sanitize_log_string debe truncar strings largos."""
+        from app import sanitize_log_string
+        long_string = "a" * 200
+        result = sanitize_log_string(long_string, max_length=50)
+        assert len(result) == 50
+        assert result.endswith('...')
+
+    def test_sanitize_log_string_empty(self):
+        """M2: sanitize_log_string maneja strings vacíos."""
+        from app import sanitize_log_string
+        assert sanitize_log_string('') == ''
+        assert sanitize_log_string(None) == ''
+
+    def test_robots_txt_has_cache_control(self, client):
+        """B5: robots.txt debe tener Cache-Control header."""
+        response = client.get('/robots.txt')
+        assert response.status_code == 200
+        cache = response.headers.get('Cache-Control', '')
+        assert 'public' in cache
+        assert 'max-age=3600' in cache
+
+    def test_sitemap_xml_has_cache_control(self, client):
+        """B5: sitemap.xml debe tener Cache-Control header."""
+        response = client.get('/sitemap.xml')
+        assert response.status_code == 200
+        cache = response.headers.get('Cache-Control', '')
+        assert 'public' in cache
+        assert 'max-age=3600' in cache
+
+    def test_security_txt_has_cache_control(self, client):
+        """B5: security.txt debe tener Cache-Control header."""
+        response = client.get('/.well-known/security.txt')
+        assert response.status_code == 200
+        cache = response.headers.get('Cache-Control', '')
+        assert 'public' in cache
+        assert 'max-age=86400' in cache
+
+    def test_manifest_json_has_id_field(self):
+        """B3: manifest.json debe tener campo id (corregido a '/' sin query string)."""
+        import json
+        import os
+        manifest_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static', 'manifest.json'
+        )
+        with open(manifest_path) as f:
+            manifest = json.load(f)
+        assert 'id' in manifest
+        # M4 Fix: id should use query string to avoid conflicts
+        assert manifest['id'] == '/?source=pwa'
+
+
+# ==============================================================================
+# Tests de Correcciones Auditoría Ciclo 1 (2026-01-21 - Fixes)
+# ==============================================================================
+class TestAuditCycle1Fixes:
+    """Tests para verificar correcciones adicionales del Ciclo 1."""
+
+    def test_healthz_has_x_robots_tag(self, client):
+        """A3: /healthz debe tener X-Robots-Tag para evitar indexación."""
+        response = client.get('/healthz')
+        assert response.status_code == 200
+        assert response.headers.get('X-Robots-Tag') == 'noindex, nofollow'
+
+    def test_ready_has_x_robots_tag(self, client):
+        """A3: /ready debe tener X-Robots-Tag para evitar indexación."""
+        response = client.get('/ready')
+        assert response.status_code == 200
+        assert response.headers.get('X-Robots-Tag') == 'noindex, nofollow'
+
+    def test_log_level_fallback_on_invalid(self, monkeypatch):
+        """L2: LOG_LEVEL inválido debe hacer fallback a INFO."""
+        import importlib
+        import os
+        
+        original_level = os.environ.get('LOG_LEVEL')
+        
+        try:
+            monkeypatch.setenv('LOG_LEVEL', 'INVALID_LEVEL')
+            import app as app_module
+            importlib.reload(app_module)
+            
+            # Should fallback to INFO
+            assert app_module.LOG_LEVEL == 'INFO'
+        finally:
+            if original_level:
+                os.environ['LOG_LEVEL'] = original_level
+            elif 'LOG_LEVEL' in os.environ:
+                del os.environ['LOG_LEVEL']
+            importlib.reload(app_module)
+
+    def test_security_txt_expires_validates_format(self, monkeypatch):
+        """A1: SECURITY_TXT_EXPIRES con formato inválido debe usar fallback."""
+        import importlib
+        import os
+        
+        original_expires = os.environ.get('SECURITY_TXT_EXPIRES')
+        
+        try:
+            monkeypatch.setenv('SECURITY_TXT_EXPIRES', 'invalid-date-format')
+            import app as app_module
+            importlib.reload(app_module)
+            
+            # Should use auto-calculated format (should be valid ISO 8601)
+            expires = app_module.SECURITY_TXT_EXPIRES
+            assert 'T' in expires  # ISO 8601 has T separator
+            assert expires.endswith('Z')  # Should end with Z for UTC
+        finally:
+            if original_expires:
+                os.environ['SECURITY_TXT_EXPIRES'] = original_expires
+            elif 'SECURITY_TXT_EXPIRES' in os.environ:
+                del os.environ['SECURITY_TXT_EXPIRES']
+            importlib.reload(app_module)
+
+    def test_error_pages_dont_load_lottie(self, client):
+        """M5: Páginas de error no deben cargar lottie.min.js (optimización)."""
+        response = client.get('/nonexistent-page-xyz')
+        assert response.status_code == 404
+        # lottie.min.js should NOT be in error pages
+        assert b'lottie.min.js' not in response.data
+
+    def test_index_loads_lottie(self, client):
+        """M5: Página principal SÍ debe cargar lottie.min.js."""
+        response = client.get('/')
+        assert response.status_code == 200
+        # lottie.min.js should be in index
+        assert b'lottie.min.js' in response.data
+
+
+# ==============================================================================
+# Tests de Correcciones Auditoría Ciclo 1 - Fase 2 (2026-01-22)
+# ==============================================================================
+class TestAuditCycle1Phase2:
+    """Tests para verificar correcciones de la auditoría Ciclo 1 Fase 2."""
+
+    def test_x_xss_protection_header_present(self, client):
+        """M6 Fix: X-XSS-Protection debe estar presente y deshabilitado."""
+        response = client.get('/')
+        xss_header = response.headers.get('X-XSS-Protection')
+        assert xss_header == '0', "X-XSS-Protection should be '0' to disable legacy filter"
+
+    def test_robots_txt_disallows_internal_endpoints(self, client):
+        """B3 Fix: robots.txt debe excluir endpoints internos."""
+        response = client.get('/robots.txt')
+        assert response.status_code == 200
+        content = response.data.decode('utf-8')
+        assert 'Disallow: /healthz' in content
+        assert 'Disallow: /ready' in content
+        assert 'Disallow: /status' in content
+
+    def test_status_endpoint_has_rate_limit(self, client):
+        """M2 Fix: /status debe tener rate limiting aplicado."""
+        # This test verifies the route is decorated with rate_limit
+        # We can't easily test rate limiting in unit tests, but we verify
+        # the endpoint still works correctly
+        response = client.get('/status')
+        assert response.status_code == 301  # Redirect to /healthz
+        assert '/healthz' in response.headers.get('Location', '')
+
+    def test_security_contact_max_length_constant_exists(self):
+        """M3 Fix: SECURITY_CONTACT_MAX_LENGTH debe estar definido."""
+        from app import SECURITY_CONTACT_MAX_LENGTH
+        assert SECURITY_CONTACT_MAX_LENGTH == 500
+
+    def test_base_template_scripts_have_defer(self):
+        """M5 Fix: Scripts en base.html deben tener atributo defer."""
+        import os
+        base_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'templates', 'base.html'
+        )
+        with open(base_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # Both main.js and sw-register.js should have defer
+        assert 'defer src="{{ url_for(\'static\', filename=\'js/main.js\')' in content or \
+               '<script defer src="{{ url_for(\'static\', filename=\'js/main.js\')' in content.replace('"', "'")
+        assert 'defer' in content and 'sw-register.js' in content
+
+
+# ==============================================================================
+# Tests de Validación REDIS_URL (H1-M02)
+# ==============================================================================
+class TestRedisURLValidation:
+    """Tests para validación de esquemas de REDIS_URL."""
+
+    def test_redis_url_accepts_rediss_scheme(self, monkeypatch):
+        """H1-M02: REDIS_URL con esquema rediss:// (TLS) debe ser aceptado."""
+        import importlib
+        import os
+        
+        original_url = os.environ.get('REDIS_URL')
+        original_vercel = os.environ.get('VERCEL')
+        
+        try:
+            # Simulate development environment to avoid production checks
+            if 'VERCEL' in os.environ:
+                del os.environ['VERCEL']
+            
+            monkeypatch.setenv('REDIS_URL', 'rediss://default:password@host.upstash.io:6379')
+            import app as app_module
+            importlib.reload(app_module)
+            
+            # Should not raise RuntimeError and should accept rediss://
+            assert app_module.RATE_LIMIT_STORAGE.startswith('rediss://')
+        finally:
+            if original_url:
+                os.environ['REDIS_URL'] = original_url
+            elif 'REDIS_URL' in os.environ:
+                del os.environ['REDIS_URL']
+            if original_vercel:
+                os.environ['VERCEL'] = original_vercel
+            importlib.reload(app_module)

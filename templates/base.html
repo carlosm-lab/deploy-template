@@ -49,22 +49,18 @@
 <body class="font-sans min-h-screen flex flex-col overflow-x-hidden text-slate-700">
     {% block content %}{% endblock %}
 
-    <!-- Custom JavaScript -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Custom JavaScript (M5 Fix: defer for better LCP) -->
+    <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
 
     <!-- Service Worker Registration (CSP compliant - external file) -->
-    <script src="{{ url_for('static', filename='js/sw-register.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/sw-register.js') }}"></script>
 
-    <!-- Lottie Animation Library -->
-    <script src="{{ url_for('static', filename='js/lottie.min.js') }}"></script>
-    <!-- Robot Animation -->
-    <script src="{{ url_for('static', filename='js/robot.js') }}"></script>
-
+    <!-- M5: Lottie scripts moved to index.html to avoid loading on error pages -->
     {% block extra_scripts %}{% endblock %}
 
-    <!-- L6: Fallback for users with JavaScript disabled -->
+    <!-- L6: Fallback for users with JavaScript disabled (Cycle 2: CSP compliant) -->
     <noscript>
-        <div style="background: #fef3c7; color: #92400e; padding: 1rem; text-align: center; font-family: sans-serif;">
+        <div class="noscript-warning">
             Este sitio funciona mejor con JavaScript habilitado.
         </div>
     </noscript>

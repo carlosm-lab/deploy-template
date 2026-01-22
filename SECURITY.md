@@ -65,6 +65,51 @@ Para añadir preload:
 | `SECRET_KEY` | ✅ **Obligatorio** | Clave criptográfica de 64 caracteres hex |
 | `REDIS_URL` | ✅ **Obligatorio** | URL de Redis para rate limiting |
 | `HEALTH_CHECK_TOKEN` | ✅ **Obligatorio** | Token para proteger /healthz y /ready |
+| `ALLOWED_HOSTS` | ⚠️ Recomendado | Hosts permitidos (auto-detecta desde BASE_URL si no se configura) |
+
+## Rotación de Tokens de Seguridad
+
+### Rotación de HEALTH_CHECK_TOKEN
+
+1. Generar nuevo token: `python -c "import secrets; print(secrets.token_hex(16))"`
+2. Actualizar variable en Vercel Dashboard > Settings > Environment Variables
+3. Redesplegar la aplicación
+4. Actualizar monitoreo/uptime checks con el nuevo token
+
+**Nota**: No hay downtime durante la rotación. El nuevo token toma efecto inmediatamente después del redeploy.
+
+### Rotación de SECRET_KEY
+
+⚠️ **PRECAUCIÓN**: Rotar SECRET_KEY invalidará todas las sesiones activas.
+
+1. Generar nueva clave: `python -c "import secrets; print(secrets.token_hex(32))"`
+2. Actualizar variable en Vercel Dashboard
+3. Redesplegar la aplicación
+4. Los usuarios deberán iniciar sesión nuevamente (si hay autenticación)
+
+### Rotación de REDIS_URL
+
+La rotación de credenciales Redis afecta el rate limiting pero no causa pérdida de datos críticos.
+
+1. Crear nueva base de datos Redis en Upstash (o regenerar password en la existente)
+2. Copiar la nueva Redis URL
+3. Actualizar `REDIS_URL` en Vercel Dashboard > Settings > Environment Variables
+4. Redesplegar la aplicación
+
+**Impacto**:
+- Los contadores de rate limiting se reinician (comportamiento esperado)
+- Usuarios podrían experimentar límites "frescos" temporalmente
+- No hay downtime durante la rotación
+
+**Frecuencia recomendada**: Cada 6-12 meses o inmediatamente tras sospecha de compromiso.
+
+## Host Header Validation
+
+La aplicación valida el header `Host` para prevenir ataques de host header injection:
+
+- En producción, solo se permiten hosts configurados en `ALLOWED_HOSTS` o derivados de `BASE_URL`
+- En desarrollo, localhost y 127.0.0.1 siempre están permitidos
+- Requests con Host no válido reciben HTTP 400
 
 ## Seguridad en Uploads (cuando se implementen)
 
@@ -94,3 +139,26 @@ Para forzar actualización en todos los usuarios:
 Usar variable de entorno `VERCEL_GIT_COMMIT_SHA` en el build:
 - El SW incluye timestamp del deploy
 - Cache se invalida automáticamente en cada deploy
+
+## Dependencias JavaScript Estáticas
+
+### lottie.min.js (Monitoreo Manual Requerido)
+
+**Versión actual**: 5.12.2  
+**SHA256**: `a0757321f974527bda3cc2593bf56cc7ffe4578421249ced6ae49ffb1c529f90`  
+**Fuente**: https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js
+
+> ⚠️ **IMPORTANTE**: Este archivo está hosteado localmente y NO se actualiza automáticamente.
+
+**Procedimiento de actualización trimestral**:
+
+1. Revisar CVEs en https://security.snyk.io/package/npm/lottie-web
+2. Si hay vulnerabilidades:
+   - Descargar nueva versión desde CDNJS
+   - Recalcular SHA256: `Get-FileHash static/js/lottie.min.js -Algorithm SHA256`
+   - Actualizar hash en `.github/workflows/ci.yml`
+   - Actualizar este documento
+3. Si no hay vulnerabilidades: documentar revisión con fecha
+
+**Última revisión**: 2026-01-22 ✅ Sin vulnerabilidades conocidas
+

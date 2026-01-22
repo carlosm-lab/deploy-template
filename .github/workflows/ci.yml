@@ -28,6 +28,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
       
+      - name: Update Service Worker cache version
+        run: |
+          # Auto-update DEPLOY_HASH for cache invalidation
+          HASH=$(date +%Y%m%d%H%M)
+          sed -i "s/DEPLOY_HASH = '[^']*'/DEPLOY_HASH = '$HASH'/" static/sw.js
+          echo "Updated DEPLOY_HASH to: $HASH"
+      
+      - name: Verify lottie.min.js integrity (H1-A01)
+        run: |
+          EXPECTED="a0757321f974527bda3cc2593bf56cc7ffe4578421249ced6ae49ffb1c529f90"
+          ACTUAL=$(sha256sum static/js/lottie.min.js | cut -d' ' -f1)
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "ERROR: lottie.min.js integrity check failed!"
+            echo "Expected: $EXPECTED"
+            echo "Actual:   $ACTUAL"
+            exit 1
+          fi
+          echo "✓ lottie.min.js integrity verified (SHA256 match)"
+      
       - name: Run tests with coverage
         run: pytest tests/ -v --cov=app --cov-report=term-missing --cov-fail-under=70
       
@@ -52,15 +71,19 @@ jobs:
       
       - name: Validate templates exist
         run: |
-          for f in templates/base.html templates/index.html templates/errors/403.html templates/errors/404.html templates/errors/429.html templates/errors/500.html; do
+          for f in templates/base.html templates/index.html templates/errors/error_base.html templates/errors/403.html templates/errors/404.html templates/errors/429.html templates/errors/500.html; do
             test -f "$f" || exit 1
           done
       
-      - name: Validate PWA icons
+      - name: "Validate PWA icons (M6: size verification)"
         run: |
           test -f static/favicon.svg
           test -f static/icons/icon-192.png
           test -f static/icons/icon-512.png
+          # M6: Verify icons are not empty or corrupt (minimum reasonable size)
+          test $(stat --printf="%s" static/icons/icon-192.png) -gt 1000 || { echo "ERROR: icon-192.png too small"; exit 1; }
+          test $(stat --printf="%s" static/icons/icon-512.png) -gt 5000 || { echo "ERROR: icon-512.png too small"; exit 1; }
+          echo "PWA icons validated successfully"
       
       - name: Validate CSP compliance (M6)
         run: |

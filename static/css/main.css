@@ -212,3 +212,34 @@ body {
 .bg-gold-gradient {
     background: linear-gradient(135deg, #fcd34d 0%, #fef3c7 50%, #d97706 100%);
 }
+
+/* ======================================
+   8. B6: Classes to replace inline styles (CSP hardening ready)
+   ====================================== */
+
+/* Drop shadow for gear SVGs - replaces inline style="filter: drop-shadow(...)" */
+.gear-shadow-lg {
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+}
+
+.gear-shadow-xl {
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+}
+
+/* Material Symbols filled variant - replaces inline font-variation-settings */
+.material-symbols-filled {
+    font-variation-settings: 'FILL' 1;
+}
+
+/* ======================================
+   9. Cycle 2 Fix: Noscript fallback (CSP compliance)
+   ====================================== */
+
+/* Styles for noscript warning message - moved from inline to external CSS */
+.noscript-warning {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 1rem;
+    text-align: center;
+    font-family: sans-serif;
+}

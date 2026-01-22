@@ -1,6 +1,7 @@
 {
     "name": "VercelDeploy Template",
     "short_name": "VDeploy",
+    "id": "/?source=pwa",
     "description": "Plantilla profesional para pre-despliegue en Vercel",
     "start_url": "/",
     "scope": "/",
@@ -34,6 +35,8 @@
             "purpose": "any maskable"
         }
     ],
+    "screenshots": [],
+    "shortcuts": [],
     "related_applications": [],
     "prefer_related_applications": false
 }

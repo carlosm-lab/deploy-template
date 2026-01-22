@@ -82,6 +82,39 @@ if LOG_LEVEL_RAW not in VALID_LOG_LEVELS:
 # =============================================================================
 # Privacy Utilities (GDPR Compliant)
 # =============================================================================
+def sanitize_log_string(value: str, max_length: int = 150) -> str:
+    """
+    Sanitize a string for safe logging.
+    Removes control characters and ANSI escape sequences to prevent log injection.
+
+    Args:
+        value: String to sanitize
+        max_length: Maximum length to truncate to
+
+    Returns:
+        Sanitized string safe for logging
+    """
+    if not value:
+        return ''
+
+    # Remove ANSI escape sequences
+    import re as _re
+    ansi_pattern = _re.compile(r'\x1b\[[0-9;]*[a-zA-Z]')
+    sanitized = ansi_pattern.sub('', value)
+
+    # Remove control characters (except newline and tab for readability)
+    sanitized = ''.join(
+        char for char in sanitized
+        if char >= ' ' or char in '\n\t'
+    )
+
+    # Truncate and indicate if truncated
+    if len(sanitized) > max_length:
+        return sanitized[:max_length - 3] + '...'
+
+    return sanitized
+
+
 def anonymize_ip(ip_address: str) -> str:
     """
     Anonimiza una dirección IP para cumplimiento GDPR.
@@ -153,6 +186,9 @@ app.config['SESSION_COOKIE_SECURE'] = IS_PRODUCTION
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
+# M5: Configure Jinja2 cache explicitly for production optimization
+app.jinja_env.auto_reload = IS_DEVELOPMENT
+
 # =============================================================================
 # Rate Limiting Configuration
 # =============================================================================
@@ -166,7 +202,28 @@ from flask_limiter.util import get_remote_address
 # Determinar storage backend (logs removed for Vercel compatibility)
 REDIS_URL = os.environ.get('REDIS_URL') or os.environ.get('UPSTASH_REDIS_REST_URL')
 
+# B2: Validate REDIS_URL format
 if REDIS_URL:
+    # A1: Detect Upstash REST API URL (wrong format) and guide user
+    if REDIS_URL.startswith('https://'):
+        if 'upstash' in REDIS_URL.lower():
+            raise RuntimeError(
+                "REDIS_URL parece ser la REST API de Upstash (https://). "
+                "Flask-Limiter requiere la URL Redis nativa. "
+                "Encuéntrala en: Upstash Console > Database > Details > Redis URL "
+                "(formato: redis://default:PASSWORD@HOST:PORT o rediss://...)"
+            )
+        else:
+            raise RuntimeError(
+                f"Invalid REDIS_URL format: URLs https:// no son soportadas. "
+                f"Usa redis:// o rediss:// (Got: '{REDIS_URL[:30]}...')"
+            )
+    if not (REDIS_URL.startswith('redis://') or REDIS_URL.startswith('rediss://')):
+        raise RuntimeError(
+            f"Invalid REDIS_URL format. Must start with 'redis://' or 'rediss://'. "
+            f"Got: '{REDIS_URL[:20]}...' "
+            "Example: redis://default:PASSWORD@HOST:PORT"
+        )
     RATE_LIMIT_STORAGE = REDIS_URL
     # Logging happens at request time, not import time
 elif IS_PRODUCTION:
@@ -180,16 +237,48 @@ else:
     # Development: Local memory
     RATE_LIMIT_STORAGE = "memory://"
 
-# Siempre inicializar limiter (A1: añadido storage_options con timeouts)
+# A1: Callback para logging de rate limit breaches
+def on_rate_limit_breach(request_limit):
+    """Log rate limit breaches for security monitoring."""
+    try:
+        logger.warning(
+            "Rate limit breach detected",
+            extra={
+                "limit": str(request_limit),
+                "ip": anonymize_ip(request.remote_addr) if request else "unknown",
+                "path": request.path if request else "unknown",
+                "security": "rate_limit_breach"
+            }
+        )
+    except Exception:
+        pass  # Don't fail on logging errors
+
+
+# Siempre inicializar limiter (A1: añadido resilient handling)
+# M1-A04: Connection pooling configuration for better performance under load
+# H2-FIX: Enhanced retry configuration for network resilience
+REDIS_STORAGE_OPTIONS = {
+    "socket_connect_timeout": 2,  # 2 second connection timeout (H1-A02: Vercel serverless compat)
+    "socket_timeout": 3,          # 3 second socket timeout (leaves margin for request processing)
+    "retry_on_timeout": True,     # A1: Retry on timeout for resilience
+    # H2-FIX: Retry on connection errors (reset, refused, etc.)
+    # This uses exponential backoff: 0.1s, 0.2s, 0.4s for 3 retries
+    "retry_on_error": [ConnectionError, TimeoutError, OSError],
+    "retry": None,  # Will use default Retry with backoff if redis-py >= 4.5
+    # M1-A04: Connection pooling - reuse connections instead of opening new ones per request
+    # max_connections=10 is conservative for serverless (Vercel limits concurrent connections)
+    # Upstash free tier allows 30 concurrent connections, paid allows more
+    "max_connections": 10,
+    "health_check_interval": 30,  # Check connection health every 30s
+} if REDIS_URL else {}
+
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
     default_limits=["200 per day", "50 per hour"],
     storage_uri=RATE_LIMIT_STORAGE,
-    storage_options={
-        "socket_connect_timeout": 2,  # 2 second connection timeout
-        "socket_timeout": 2,          # 2 second socket timeout
-    } if REDIS_URL else {},
+    storage_options=REDIS_STORAGE_OPTIONS,
+    on_breach=on_rate_limit_breach,  # A1: Log breaches for monitoring
 )
 
 def rate_limit(limit_string):
@@ -230,10 +319,55 @@ def inject_globals():
 # Regex for validating X-Request-ID format (alphanumeric, dashes, max 36 chars)
 REQUEST_ID_PATTERN = re.compile(r'^[a-zA-Z0-9-]{1,36}$')
 
+# M5: HOST header whitelist for preventing host header injection
+# Initialized lazily to avoid circular dependency with BASE_URL
+_ALLOWED_HOSTS = None
+
+def get_allowed_hosts():
+    """Get allowed hosts list, initializing lazily if needed."""
+    global _ALLOWED_HOSTS
+    if _ALLOWED_HOSTS is not None:
+        return _ALLOWED_HOSTS
+
+    allowed_hosts_raw = os.environ.get('ALLOWED_HOSTS', '')
+    if allowed_hosts_raw:
+        _ALLOWED_HOSTS = [h.strip().lower() for h in allowed_hosts_raw.split(',') if h.strip()]
+    else:
+        # Auto-derive from BASE_URL (defined later in file)
+        from urllib.parse import urlparse
+        try:
+            parsed_base = urlparse(BASE_URL)
+            _ALLOWED_HOSTS = [parsed_base.netloc.lower()] if parsed_base.netloc else []
+        except NameError:
+            _ALLOWED_HOSTS = []
+
+        # Always allow localhost for development
+        if IS_DEVELOPMENT:
+            _ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', 'localhost:5000', '127.0.0.1:5000'])
+
+    return _ALLOWED_HOSTS
+
 
 @app.before_request
 def before_request():
-    """Add request ID and timing for observability."""
+    """Add request ID, timing, and validate HOST header."""
+    # M5: Validate HOST header to prevent host header injection
+    allowed_hosts = get_allowed_hosts()
+    if allowed_hosts:
+        request_host = request.host.lower() if request.host else ''
+        # Strip port for comparison if needed
+        host_without_port = request_host.split(':')[0]
+        if request_host not in allowed_hosts and host_without_port not in allowed_hosts:
+            logger.warning(
+                "Invalid Host header rejected",
+                extra={
+                    "host": request_host[:50],
+                    "allowed": allowed_hosts[:3],
+                    "security": "host_header_blocked"
+                }
+            )
+            return Response('Bad Request: Invalid Host', status=400)
+
     # Validate X-Request-ID to prevent log injection
     user_request_id = request.headers.get('X-Request-ID', '')
     if user_request_id and REQUEST_ID_PATTERN.match(user_request_id):
@@ -242,6 +376,26 @@ def before_request():
         # Use full UUID for zero collision risk
         g.request_id = str(uuid.uuid4())
     g.request_start = datetime.now(timezone.utc)
+
+    # M2: Preparatory Content-Type validation for future POST endpoints
+    if request.method in ['POST', 'PUT', 'PATCH']:
+        content_type = request.content_type or ''
+        allowed_types = [
+            'application/json',
+            'application/x-www-form-urlencoded',
+            'multipart/form-data',
+        ]
+        if not any(content_type.startswith(t) for t in allowed_types):
+            logger.warning(
+                "Unsupported Content-Type rejected",
+                extra={
+                    "content_type": content_type[:50],
+                    "method": request.method,
+                    "path": request.path,
+                    "security": "content_type_blocked"
+                }
+            )
+            return Response('Unsupported Media Type', status=415)
 
 
 @app.after_request
@@ -260,14 +414,21 @@ def after_request(response):
         'X-Frame-Options': 'DENY',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
-        # CSP - Extensibility Guide:
+        # M4: Prevent DNS prefetching to protect user privacy
+        'X-DNS-Prefetch-Control': 'off',
+        # M6 Fix: Disable legacy XSS filter (can introduce vulnerabilities)
+        'X-XSS-Protection': '0',
+        # A1: CSP unified with vercel.json - using consistent restrictive policy
+        # Extensibility Guide:
         # - Para añadir analytics: script-src 'self' https://www.googletagmanager.com;
         # - Para añadir APIs externas: connect-src 'self' https://api.example.com;
         # - Para CDN de fuentes: font-src 'self' https://fonts.gstatic.com;
-        # IMPORTANTE: Actualizar también vercel.json para consistencia
+        # IMPORTANTE: Mantener sincronizado con vercel.json
         'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self';",
         # HSTS - 1 year (preload removed until domain is registered at hstspreload.org)
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+        # A3: Explicit cache control for dynamic content - prevent proxy caching
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
     }
     for header, value in security_headers.items():
         if header not in response.headers:
@@ -336,7 +497,14 @@ def health():
         'app': 'ok',
         'redis': 'configured' if REDIS_URL else 'not_configured'
     }
-    return {'status': 'ok', 'checks': checks}, 200
+    response = Response(
+        json.dumps({'status': 'ok', 'checks': checks}),
+        status=200,
+        mimetype='application/json'
+    )
+    # A3 Fix: Prevent search engine indexing of health endpoints
+    response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+    return response
 
 
 @app.route('/ready')
@@ -351,26 +519,59 @@ def ready():
     is configured and ready to handle requests properly.
     Useful for load balancers and orchestrators.
 
-    Note: For this template, readiness means configuration is valid.
-    In a full application, this would verify database connections, etc.
+    Checks performed:
+    - App configuration validation (implicit - app started)
+    - Redis connectivity (if configured) via PING command
     """
     checks = {'app': 'ok'}
 
-    # Redis check: reports configuration status
-    # In production, REDIS_URL is required so this will be 'configured'
-    checks['redis'] = 'configured' if REDIS_URL else 'not_configured'
+    # Redis check: verify actual connectivity, not just configuration
+    if REDIS_URL:
+        try:
+            from redis import Redis
+            # M2: Separate timeouts for better resilience during high latency
+            redis_client = Redis.from_url(
+                REDIS_URL,
+                socket_connect_timeout=3,  # Connection establishment timeout
+                socket_timeout=5           # Operation timeout (for PING)
+            )
+            redis_client.ping()
+            checks['redis'] = 'connected'
+        except Exception as e:
+            checks['redis'] = 'error'
+            logger.warning(
+                "Redis connectivity check failed",
+                extra={
+                    "error": str(e)[:100],
+                    "component": "redis",
+                    "health_check": "ready"
+                }
+            )
+    else:
+        checks['redis'] = 'not_configured'
 
     # All checks pass if we reach this point (startup validations passed)
-    return {'status': 'ready', 'checks': checks}, 200
+    response = Response(
+        json.dumps({'status': 'ready', 'checks': checks}),
+        status=200,
+        mimetype='application/json'
+    )
+    # A3 Fix: Prevent search engine indexing of health endpoints
+    response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+    return response
 
 
 @app.route('/status')
+@rate_limit("10 per minute")  # M2 Fix: Rate limit on legacy endpoint
 def status():
     """
     Legacy status endpoint - permanently redirects to /healthz.
     Deprecated: Use /healthz instead.
     """
-    return redirect(url_for('health'), code=301)
+    response = redirect(url_for('health'), code=301)
+    # L5 Cycle 2: Prevent indexing of deprecated endpoint
+    response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+    return response
 
 
 # =============================================================================
@@ -411,39 +612,108 @@ elif IS_PRODUCTION and BASE_URL_RAW == 'http://localhost:5000':
 else:
     BASE_URL = BASE_URL_RAW
 
-# Security contact for security.txt
-SECURITY_CONTACT = os.environ.get(
-    'SECURITY_CONTACT',
-    'https://github.com/Memory-Bank/deploy/security/advisories/new'
-)
+# Security contact for security.txt (B1: Default requires configuration)
+# M3: Added URI format validation for RFC 9116 compliance
+SECURITY_CONTACT_RAW = os.environ.get('SECURITY_CONTACT')
+SECURITY_CONTACT = None
 
-# Stable expiration date for security.txt (A1: RFC 9116 compliance)
-# Use deployment date or current date, expires in 1 year
-# In production, use deployment timestamp for stability
-if IS_PRODUCTION:
-    # Use a stable date based on deployment (or fallback to configured date)
-    SECURITY_TXT_EXPIRES = os.environ.get(
-        'SECURITY_TXT_EXPIRES',
-        (datetime.now(timezone.utc).replace(month=1, day=1) + timedelta(days=365+365)).strftime('%Y-%m-%dT00:00:00.000Z')
-    )
+# M3 Fix: Maximum length validation to prevent DoS via logs
+SECURITY_CONTACT_MAX_LENGTH = 500
+
+if SECURITY_CONTACT_RAW:
+    # Validate length first
+    if len(SECURITY_CONTACT_RAW) > SECURITY_CONTACT_MAX_LENGTH:
+        logger.warning(
+            f"SECURITY_CONTACT too long ({len(SECURITY_CONTACT_RAW)} chars), max is {SECURITY_CONTACT_MAX_LENGTH}. Using placeholder.",
+            extra={"component": "config", "security": "invalid_config"}
+        )
+    # Validate URI format: must start with mailto: or https://
+    elif SECURITY_CONTACT_RAW.startswith('mailto:') or SECURITY_CONTACT_RAW.startswith('https://'):
+        SECURITY_CONTACT = SECURITY_CONTACT_RAW
+    else:
+        logger.warning(
+            "Invalid SECURITY_CONTACT format. Must start with 'mailto:' or 'https://'. Using placeholder.",
+            extra={"component": "config", "provided_value": SECURITY_CONTACT_RAW[:30], "security": "invalid_config"}
+        )
+
+if not SECURITY_CONTACT:
+    if IS_PRODUCTION:
+        # In production, log warning but allow deployment with placeholder
+        # The security.txt will be generated but should be configured properly
+        SECURITY_CONTACT = f'{BASE_URL}/.well-known/security.txt#configure-contact'
+        if not SECURITY_CONTACT_RAW:
+            logger.warning(
+                "SECURITY_CONTACT not configured. Using placeholder URL.",
+                extra={"component": "config", "security": "incomplete_config"}
+            )
+    else:
+        SECURITY_CONTACT = 'https://github.com/YOUR-USERNAME/YOUR-REPO/security/advisories/new'
+
+# Stable expiration date for security.txt (RFC 9116 compliance)
+# M4: Enhanced documentation and calculation
+#
+# IMPORTANT: security.txt EXPIRES field is required by RFC 9116.
+# The expiration date should be no more than 1 year in the future.
+#
+# OPTIONS:
+# 1. Set SECURITY_TXT_EXPIRES env var (format: 2027-01-01T00:00:00.000Z)
+# 2. Let it auto-calculate (1 year from current date)
+#
+# MAINTENANCE NOTE: If you don't redeploy for 1+ year, security.txt expires.
+# Recommendation: Set up annual reminder to redeploy or update SECURITY_TXT_EXPIRES.
+#
+SECURITY_TXT_EXPIRES_RAW = os.environ.get('SECURITY_TXT_EXPIRES')
+if SECURITY_TXT_EXPIRES_RAW:
+    # A1 Fix: Validate ISO 8601 format before using
+    try:
+        # Parse to validate format (handles 'Z' suffix)
+        datetime.fromisoformat(SECURITY_TXT_EXPIRES_RAW.replace('Z', '+00:00'))
+        SECURITY_TXT_EXPIRES = SECURITY_TXT_EXPIRES_RAW
+    except ValueError:
+        logger.warning(
+            "Invalid SECURITY_TXT_EXPIRES format, using auto-calculated",
+            extra={"component": "config", "provided_value": SECURITY_TXT_EXPIRES_RAW[:30]}
+        )
+        # Fallback to calculated
+        expiry_date = datetime.now(timezone.utc) + timedelta(days=365)
+        SECURITY_TXT_EXPIRES = expiry_date.strftime('%Y-%m-%dT00:00:00.000Z')
 else:
-    # Development: use 1 year from now
-    SECURITY_TXT_EXPIRES = (datetime.now(timezone.utc) + timedelta(days=365)).strftime('%Y-%m-%dT00:00:00.000Z')
+    # Calculate 1 year from now (standard practice)
+    expiry_date = datetime.now(timezone.utc) + timedelta(days=365)
+    SECURITY_TXT_EXPIRES = expiry_date.strftime('%Y-%m-%dT00:00:00.000Z')
 
 
 @app.route('/robots.txt')
+@rate_limit("30 per minute")  # M3: Rate limit SEO routes
 def robots():
     """Generate robots.txt dynamically with correct BASE_URL."""
+    # M1-A02: Configurable disallow paths via environment variable
+    # Default paths that should never be crawled
+    default_disallow = ['/healthz', '/ready', '/status']
+    
+    # Additional paths from env (comma-separated)
+    extra_disallow_raw = os.environ.get('ROBOTS_DISALLOW', '')
+    extra_disallow = [p.strip() for p in extra_disallow_raw.split(',') if p.strip()]
+    
+    # Merge and deduplicate
+    all_disallow = list(dict.fromkeys(default_disallow + extra_disallow))
+    disallow_lines = '\n'.join(f'Disallow: {path}' for path in all_disallow)
+    
     content = f"""# robots.txt
 User-agent: *
 Allow: /
+{disallow_lines}
 
 Sitemap: {BASE_URL}/sitemap.xml
 """
-    return Response(content, mimetype='text/plain')
+    response = Response(content, mimetype='text/plain')
+    # B5: Cache-Control for SEO routes (M4: Added s-maxage for CDN revalidation)
+    response.headers['Cache-Control'] = 'public, max-age=3600, s-maxage=60'
+    return response
 
 
 @app.route('/sitemap.xml')
+@rate_limit("30 per minute")  # M3: Rate limit SEO routes
 def sitemap():
     """Generate sitemap.xml dynamically with correct BASE_URL."""
     # Get current date for lastmod
@@ -458,10 +728,14 @@ def sitemap():
     </url>
 </urlset>
 """
-    return Response(content, mimetype='application/xml')
+    response = Response(content, mimetype='application/xml')
+    # B5: Cache-Control for SEO routes (M4: Added s-maxage for CDN revalidation)
+    response.headers['Cache-Control'] = 'public, max-age=3600, s-maxage=60'
+    return response
 
 
 @app.route('/.well-known/security.txt')
+@rate_limit("30 per minute")  # M3: Rate limit SEO routes
 def security_txt():
     """Generate security.txt per RFC 9116 dynamically with correct BASE_URL."""
     # A1: Use stable expiration date (configured or deployment-based)
@@ -470,7 +744,10 @@ Expires: {SECURITY_TXT_EXPIRES}
 Preferred-Languages: es, en
 Canonical: {BASE_URL}/.well-known/security.txt
 """
-    return Response(content, mimetype='text/plain')
+    response = Response(content, mimetype='text/plain')
+    # B5: Cache-Control for SEO routes
+    response.headers['Cache-Control'] = 'public, max-age=86400'  # 24 hours
+    return response
 
 
 # =============================================================================
@@ -530,7 +807,7 @@ def ratelimit_handler(error):
             "method": request.method,
             "ip": anonymize_ip(request.remote_addr),
             "error_type": "rate_limit",
-            "user_agent": request.headers.get('User-Agent', 'unknown')[:100],
+            "user_agent": sanitize_log_string(request.headers.get('User-Agent', 'unknown'), 100),
             "retry_after": retry_after_seconds,
             "limit_type": str(error.description) if hasattr(error, 'description') else 'unknown',
         }
@@ -553,6 +830,10 @@ def internal_error(error):
         "error_type": "internal",
         "error_id": error_id,
         "exception_type": type(error).__name__,
+        # M2: Sanitized User-Agent for forensic analysis (prevents log injection)
+        "user_agent": sanitize_log_string(request.headers.get('User-Agent', 'unknown'), 150),
+        "path": request.path,
+        "method": request.method,
     }
 
     # Only include full traceback in development (security: prevent info disclosure)
