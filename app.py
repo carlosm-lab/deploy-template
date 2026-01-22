@@ -135,9 +135,9 @@ if REDIS_URL:
                 "Flask-Limiter requiere URL Redis nativa (redis:// o rediss://)"
             )
         else:
-            raise RuntimeError(f"REDIS_URL inválida: URLs https:// no soportadas")
+            raise RuntimeError("REDIS_URL inválida: URLs https:// no soportadas")
     if not (REDIS_URL.startswith('redis://') or REDIS_URL.startswith('rediss://')):
-        raise RuntimeError(f"REDIS_URL debe empezar con 'redis://' o 'rediss://'")
+        raise RuntimeError("REDIS_URL debe empezar con 'redis://' o 'rediss://'")
     RATE_LIMIT_STORAGE = REDIS_URL
 elif IS_PRODUCTION:
     raise RuntimeError(
@@ -392,7 +392,7 @@ if not BASE_URL_PATTERN.match(BASE_URL_RAW):
     BASE_URL = 'http://localhost:5000'
     logger.warning(f"BASE_URL inválida '{BASE_URL_RAW}', usando default")
 elif IS_PRODUCTION and BASE_URL_RAW.startswith('http://'):
-    raise RuntimeError(f"BASE_URL debe usar HTTPS en producción")
+    raise RuntimeError("BASE_URL debe usar HTTPS en producción")
 elif IS_PRODUCTION and BASE_URL_RAW == 'http://localhost:5000':
     raise RuntimeError("BASE_URL no configurada para producción")
 else:
@@ -404,7 +404,7 @@ SECURITY_CONTACT_MAX_LENGTH = 500
 
 if SECURITY_CONTACT_RAW:
     if len(SECURITY_CONTACT_RAW) > SECURITY_CONTACT_MAX_LENGTH:
-        logger.warning(f"SECURITY_CONTACT muy largo, usando placeholder")
+        logger.warning("SECURITY_CONTACT muy largo, usando placeholder")
     elif SECURITY_CONTACT_RAW.startswith('mailto:') or SECURITY_CONTACT_RAW.startswith('https://'):
         SECURITY_CONTACT = SECURITY_CONTACT_RAW
     else:
