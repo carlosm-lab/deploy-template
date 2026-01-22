@@ -1,12 +1,10 @@
-// Robot Lottie Animation - Lazy Loaded for better LCP
-// M3: Deferred loading to not block initial paint
+/* Animación Lottie del robot - Carga diferida */
 (function () {
     'use strict';
 
     function initRobotAnimation() {
         var robotContainer = document.getElementById('lottie-robot');
         if (robotContainer && typeof lottie !== 'undefined') {
-            // Use requestIdleCallback for non-critical animation loading
             var loadAnimation = function () {
                 fetch('/static/js/robot-animation.json')
                     .then(function (response) { return response.json(); })
@@ -20,11 +18,10 @@
                         });
                     })
                     .catch(function (err) {
-                        console.error('Error loading robot animation:', err);
+                        console.error('Error cargando animación:', err);
                     });
             };
 
-            // Defer animation loading for better performance
             if ('requestIdleCallback' in window) {
                 requestIdleCallback(loadAnimation, { timeout: 2000 });
             } else {
@@ -33,7 +30,6 @@
         }
     }
 
-    // Wait for DOM and window load to ensure LCP is not blocked
     if (document.readyState === 'complete') {
         initRobotAnimation();
     } else {

@@ -1,21 +1,18 @@
-# =============================================================================
-# Development Dependencies - Flask Deploy Template
-# =============================================================================
-# Install with: pip install -r requirements-dev.txt
-# Last updated: 2026-01-22 (Security audit - Cycle 1 remediation)
-# =============================================================================
+# Dependencies - Flask Deploy Template (Desarrollo)
+# Instalar: pip install -r requirements-dev.txt
 
-# Include production dependencies
+# Incluir dependencias de producción
 -r requirements.txt
 
-# Production Server (for non-Vercel deployments)
+# Servidor de producción (para deploys no-Vercel)
 gunicorn==23.0.0
 
 # Testing
 pytest==8.3.4
 pytest-cov==6.0.0
+pytest-mock==3.12.0
 
-# Security Auditing
+# Auditoría de seguridad
 pip-audit==2.10.0
 
 # Linting

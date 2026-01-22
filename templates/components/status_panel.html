@@ -1,5 +1,4 @@
-<!-- System Status Panel -->
-{# Sanitize progress_value: force integer to prevent XSS if passed from user input #}
+<!-- Panel de estado del sistema -->
 {% set progress = (progress_value|default(75)|int)|abs %}
 {% set progress = [progress, 100]|min %}
 <div class="bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-white/60 shadow-lg">

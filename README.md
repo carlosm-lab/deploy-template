@@ -33,22 +33,61 @@ En desarrollo local, Flask-Limiter provee rate limiting en memoria. **En producc
 
 ```
 deploy/
-├── app.py               # Aplicación Flask
-├── requirements.txt     # Dependencias producción
-├── requirements-dev.txt # Dependencias desarrollo
-├── runtime.txt          # Versión Python para Vercel (3.12)
-├── vercel.json          # Configuración Vercel + headers
-├── SECURITY.md          # Documentación de seguridad
+├── app.py                  # Aplicación Flask
+├── conftest.py             # Configuración pytest
+├── requirements.txt        # Dependencias producción
+├── requirements-dev.txt    # Dependencias desarrollo
+├── runtime.txt             # Versión Python para Vercel (3.12)
+├── vercel.json             # Configuración Vercel + headers
+├── pytest.ini              # Configuración pytest
+├── .editorconfig           # Configuración del editor
+├── README.md               # Esta documentación
+├── SECURITY.md             # Documentación de seguridad
+├── api/
+│   └── index.py            # Entry point Vercel
 ├── static/
-│   ├── css/             # Estilos (Tailwind + custom)
-│   ├── js/main.js       # JavaScript
-│   ├── manifest.json    # PWA manifest
-│   ├── offline.html     # Página offline PWA
-│   └── favicon.svg      # Icono
-└── templates/
-    ├── base.html        # Plantilla base
-    ├── index.html       # Página principal
-    └── errors/          # Páginas 403/404/500
+│   ├── css/
+│   │   ├── main.css        # Estilos principales
+│   │   ├── tailwind.css    # Utilidades Tailwind
+│   │   ├── fonts.css       # Definición de fuentes
+│   │   └── offline.css     # Estilos página offline
+│   ├── js/
+│   │   ├── main.js         # JavaScript principal
+│   │   ├── lottie.min.js   # Librería animaciones
+│   │   ├── robot.js        # Animación robot
+│   │   ├── robot-animation.json  # Datos animación
+│   │   ├── offline.js      # Lógica página offline
+│   │   ├── error-handlers.js    # Manejo errores
+│   │   └── sw-register.js  # Registro Service Worker
+│   ├── icons/
+│   │   ├── icon-192.png    # Icono PWA 192x192
+│   │   └── icon-512.png    # Icono PWA 512x512
+│   ├── fonts/              # Archivos de fuentes
+│   ├── favicon.svg         # Favicon
+│   ├── manifest.json       # PWA manifest
+│   ├── sw.js               # Service Worker
+│   ├── humans.txt          # Créditos humanos
+│   └── offline.html        # Página offline PWA
+├── templates/
+│   ├── base.html           # Plantilla base
+│   ├── index.html          # Página principal
+│   ├── components/
+│   │   ├── animated_gears.html   # Animación engranajes
+│   │   ├── footer.html     # Pie de página
+│   │   ├── robot.html      # Componente robot
+│   │   ├── status_panel.html    # Panel de estado
+│   │   └── svg_defs.html   # Definiciones SVG
+│   └── errors/
+│       ├── error_base.html # Base para errores
+│       ├── 403.html        # Error 403 Prohibido
+│       ├── 404.html        # Error 404 No encontrado
+│       ├── 429.html        # Error 429 Rate limit
+│       └── 500.html        # Error 500 Interno
+├── tests/                   # Tests del proyecto
+└── .github/
+    ├── dependabot.yml      # Configuración Dependabot
+    └── workflows/
+        └── ci.yml          # Pipeline CI/CD
 ```
 
 ## Variables de Entorno

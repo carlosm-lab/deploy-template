@@ -1,10 +1,6 @@
-/**
- * Local Fonts - Inter & Material Symbols
- * Downloaded from Google Fonts for CSP compliance
- * Eliminates external dependency on fonts.googleapis.com
- */
+/* Fuentes locales */
 
-/* Material Symbols Outlined - Icons */
+/* Material Symbols */
 @font-face {
     font-family: 'Material Symbols Outlined';
     font-style: normal;
@@ -13,7 +9,7 @@
     src: url('/static/fonts/MaterialSymbolsOutlined.woff2') format('woff2');
 }
 
-/* Inter 300 - Light */
+/* Inter */
 @font-face {
     font-family: 'Inter';
     font-style: normal;
@@ -22,7 +18,6 @@
     src: url('/static/fonts/inter-300.ttf') format('truetype');
 }
 
-/* Inter 400 - Regular */
 @font-face {
     font-family: 'Inter';
     font-style: normal;
@@ -31,7 +26,6 @@
     src: url('/static/fonts/inter-400.ttf') format('truetype');
 }
 
-/* Inter 500 - Medium */
 @font-face {
     font-family: 'Inter';
     font-style: normal;
@@ -40,7 +34,6 @@
     src: url('/static/fonts/inter-500.ttf') format('truetype');
 }
 
-/* Inter 600 - SemiBold */
 @font-face {
     font-family: 'Inter';
     font-style: normal;
@@ -49,7 +42,6 @@
     src: url('/static/fonts/inter-600.ttf') format('truetype');
 }
 
-/* Inter 700 - Bold */
 @font-face {
     font-family: 'Inter';
     font-style: normal;
@@ -58,7 +50,6 @@
     src: url('/static/fonts/inter-700.ttf') format('truetype');
 }
 
-/* Inter 800 - ExtraBold */
 @font-face {
     font-family: 'Inter';
     font-style: normal;

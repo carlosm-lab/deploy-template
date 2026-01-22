@@ -6,20 +6,19 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>{% block title %}Sitio en Construcción{% endblock %}</title>
 
-    <!-- SEO Meta Tags -->
+    <!-- SEO -->
     <meta name="description"
         content="{% block meta_description %}Estamos construyendo algo increíble. Nuestro sitio estará disponible muy pronto.{% endblock %}" />
-    <!-- Production ready: allow indexing -->
     <meta name="robots" content="index, follow" />
 
-    <!-- Open Graph / Social Media -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="{% block og_title %}Sitio en Construcción{% endblock %}" />
     <meta property="og:description"
         content="Estamos construyendo algo increíble. Nuestro sitio estará disponible muy pronto." />
     <meta property="og:locale" content="es_ES" />
 
-    <!-- Twitter Card -->
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Sitio en Construcción" />
     <meta name="twitter:description"
@@ -28,19 +27,13 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
 
-    <!-- PWA Manifest -->
+    <!-- PWA -->
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
     <meta name="theme-color" content="#3b82f6" />
 
-    <!-- Fonts (Local - CSP compliant) -->
+    <!-- Estilos -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}" />
-
-    <!-- Material Symbols styles loaded from main.css (CSP compliant) -->
-
-    <!-- Tailwind CSS (compilado localmente) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}" />
-
-    <!-- Custom CSS (includes font fallback) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
 
     {% block extra_head %}{% endblock %}
@@ -49,16 +42,12 @@
 <body class="font-sans min-h-screen flex flex-col overflow-x-hidden text-slate-700">
     {% block content %}{% endblock %}
 
-    <!-- Custom JavaScript (M5 Fix: defer for better LCP) -->
+    <!-- Scripts -->
     <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
-
-    <!-- Service Worker Registration (CSP compliant - external file) -->
     <script defer src="{{ url_for('static', filename='js/sw-register.js') }}"></script>
-
-    <!-- M5: Lottie scripts moved to index.html to avoid loading on error pages -->
     {% block extra_scripts %}{% endblock %}
 
-    <!-- L6: Fallback for users with JavaScript disabled (Cycle 2: CSP compliant) -->
+    <!-- Aviso sin JavaScript -->
     <noscript>
         <div class="noscript-warning">
             Este sitio funciona mejor con JavaScript habilitado.

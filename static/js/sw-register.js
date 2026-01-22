@@ -1,12 +1,7 @@
-/**
- * Service Worker Registration
- * Moved to external file for CSP compliance (script-src 'self')
- * A2 Fix: Conditional logging disabled in production
- */
+/* Registro del Service Worker */
 (function () {
     'use strict';
 
-    // A2 Fix: Only log in development (localhost)
     var isDevMode = window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1';
 
@@ -15,12 +10,12 @@
             navigator.serviceWorker.register('/static/sw.js')
                 .then(function (registration) {
                     if (isDevMode) {
-                        console.log('[SW] Registered:', registration.scope);
+                        console.log('[SW] Registrado:', registration.scope);
                     }
                 })
                 .catch(function (error) {
                     if (isDevMode) {
-                        console.warn('[SW] Registration failed:', error);
+                        console.warn('[SW] Registro fallido:', error);
                     }
                 });
         });

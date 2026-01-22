@@ -1,9 +1,5 @@
-# =============================================================================
 # Pytest Configuration - Flask Deploy Template
-# =============================================================================
-# Este archivo asegura que el directorio raíz esté en PYTHONPATH
-# para que los tests puedan importar el módulo app correctamente.
-# =============================================================================
+# Asegura que el directorio raíz esté en PYTHONPATH para los tests
 
 import sys
 from pathlib import Path

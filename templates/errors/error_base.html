@@ -1,14 +1,11 @@
 {% extends "base.html" %}
 
-{# B4: Base template for error pages - adds noindex to prevent search engine indexing #}
+{# Plantilla base para páginas de error - evita indexación en buscadores #}
 
 {% block extra_head %}
-<!-- Prevent search engines from indexing error pages -->
 <meta name="robots" content="noindex, nofollow">
 {% endblock %}
 
 {% block extra_scripts %}
-<!-- CSP Compliant: External script for error page button handlers (reload, etc.) -->
-<!-- H1-L03: Added defer for consistency with base.html -->
 <script defer src="{{ url_for('static', filename='js/error-handlers.js') }}"></script>
 {% endblock %}

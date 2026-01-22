@@ -1,36 +1,25 @@
-# =============================================================================
-# Dependencies - Flask Deploy Template (Production)
-# =============================================================================
-# Run: pip install -r requirements.txt
-# Audit: pip-audit --strict
-# Last updated: 2026-01-21 (Security audit update)
-# =============================================================================
+# Dependencies - Flask Deploy Template (Producción)
+# Instalar: pip install -r requirements.txt
+# Auditar: pip-audit --strict
 
-# Core Framework (Latest stable versions)
+# Framework Core
 Flask==3.1.2
 Werkzeug==3.1.5
 Jinja2==3.1.6
 
-# Security & Forms
+# Seguridad y Forms
 flask-wtf==1.2.2
 
-# Rate Limiting (con soporte Redis para producción)
+# Rate Limiting (con Redis para producción)
 flask-limiter==3.8.0
 redis==5.2.1
 
-# Configuration
+# Configuración
 python-dotenv==1.0.1
 
-# =============================================================================
-# Security Pins (versiones fijadas para reproducibilidad)
-# =============================================================================
-urllib3==2.6.3           # GHSA-38jv-5279-wg99 fix (pinned for reproducibility)
-# Note: requests removed (H1-M04) - not used directly, let pip resolve transitively
+# Pins de seguridad
+urllib3==2.6.3
 
-# =============================================================================
-# Notas de Seguridad:
-# - Redis es requerido para rate limiting en producción (Vercel serverless)
-# - Configura REDIS_URL o UPSTASH_REDIS_REST_URL en variables de entorno
-# - Ejecutar pip-audit --strict regularmente para detectar vulnerabilidades
-# =============================================================================
-
+# Notas:
+# - Redis es obligatorio en producción para rate limiting
+# - Configura REDIS_URL en variables de entorno

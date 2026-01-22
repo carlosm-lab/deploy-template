@@ -1,16 +1,11 @@
-# ==============================================================================
 # Tests - Flask Deploy Template
-# ==============================================================================
 # Ejecutar con: pytest tests/ -v
-# ==============================================================================
 
 import pytest
 from app import app, anonymize_ip
 
 
-# ==============================================================================
 # Fixtures
-# ==============================================================================
 @pytest.fixture
 def client():
     """Cliente de prueba Flask."""
@@ -25,9 +20,7 @@ def runner():
     return app.test_cli_runner()
 
 
-# ==============================================================================
 # Tests de Rutas
-# ==============================================================================
 class TestRoutes:
     """Tests para las rutas principales."""
 
@@ -88,9 +81,7 @@ class TestRoutes:
         assert data['status'] == 'ok'
 
 
-# ==============================================================================
 # Tests de Manejo de Errores
-# ==============================================================================
 class TestErrorHandlers:
     """Tests para manejadores de errores."""
 
@@ -145,9 +136,7 @@ class TestErrorHandlers:
                     flask_app.config['PROPAGATE_EXCEPTIONS'] = original_propagate
 
 
-# ==============================================================================
 # Tests de Headers de Seguridad (A2)
-# ==============================================================================
 class TestSecurityHeaders:
     """Tests para verificar headers de seguridad en respuestas."""
 
@@ -174,9 +163,7 @@ class TestSecurityHeaders:
         assert 'microphone=()' in permissions
 
 
-# ==============================================================================
 # Tests de Anonimización IP (GDPR)
-# ==============================================================================
 class TestIPAnonymization:
     """Tests para la función de anonimización IP."""
 
@@ -250,9 +237,7 @@ class TestIPAnonymization:
         assert result == 'invalid-ip'
 
 
-# ==============================================================================
 # Tests de Configuración
-# ==============================================================================
 class TestConfiguration:
     """Tests de configuración de la aplicación."""
 
@@ -280,9 +265,7 @@ class TestConfiguration:
         assert app_module.SITE_NAME == 'VercelDeploy'
 
 
-# ==============================================================================
 # Tests de Seguridad
-# ==============================================================================
 class TestSecurity:
     """Tests de headers y configuración de seguridad."""
 
@@ -297,9 +280,7 @@ class TestSecurity:
         assert response.headers['X-Request-ID'] == 'test-123'
 
 
-# ==============================================================================
 # Tests de Protección de Health Check
-# ==============================================================================
 class TestHealthCheckProtection:
     """Tests para protección de endpoint healthz con token."""
 
@@ -402,9 +383,7 @@ class TestHealthCheckProtection:
         assert data['checks']['redis'] in ['connected', 'not_configured', 'error']
 
 
-# ==============================================================================
 # Tests de Rate Limiting (Desarrollo)
-# ==============================================================================
 class TestRateLimiting:
     """Tests para verificar configuración de rate limiting."""
 
@@ -416,9 +395,7 @@ class TestRateLimiting:
             assert limiter is not None
 
 
-# ==============================================================================
 # Tests de Escenarios de Error y Edge Cases
-# ==============================================================================
 class TestErrorScenarios:
     """Tests para escenarios de error, edge cases y seguridad."""
 
@@ -459,9 +436,7 @@ class TestErrorScenarios:
         assert response.headers['X-Request-ID'] == valid_id
 
 
-# ==============================================================================
-# Tests de Templates y Componentes (B4: Cobertura de templates)
-# ==============================================================================
+# Tests de Templates y Componentes
 class TestTemplates:
     """Tests para renderizado de templates y componentes."""
 
@@ -540,9 +515,7 @@ class TestTemplates:
         assert b'noindex' in response.data, "404 page should have noindex"
 
 
-# ==============================================================================
-# Tests de Contexto de Producción Simulado (M3)
-# ==============================================================================
+# Tests de Contexto de Producción Simulado
 class TestProductionSimulation:
     """Tests que simulan el entorno de producción."""
 
@@ -599,9 +572,7 @@ class TestProductionSimulation:
                     assert pattern not in content, f"Placeholder '{pattern}' found in {filename}"
 
 
-# ==============================================================================
 # Tests de Rutas SEO/Seguridad
-# ==============================================================================
 class TestSEORoutes:
     """Tests para rutas SEO y seguridad estándar."""
 
@@ -682,9 +653,7 @@ class TestSEORoutes:
             importlib.reload(app_module)
 
 
-# ==============================================================================
-# Tests de CSP Compliance (M6: Validación de archivos HTML)
-# ==============================================================================
+# Tests de CSP Compliance
 class TestCSPCompliance:
     """Tests para verificar que archivos HTML cumplen con CSP."""
 
@@ -743,9 +712,7 @@ class TestCSPCompliance:
         assert 'src="/static/js/offline.js"' in content or "src='/static/js/offline.js'" in content
 
 
-# ==============================================================================
-# Tests de Configuración de Seguridad Adicionales (A5)
-# ==============================================================================
+# Tests de Configuración de Seguridad
 class TestSecurityConfiguration:
     """Tests para configuración de seguridad de la aplicación."""
 
@@ -784,9 +751,7 @@ class TestSecurityConfiguration:
             assert os.path.exists(filepath), f"Missing required file: {filename}"
 
 
-# ==============================================================================
-# Tests de Validación de Host Header (M5)
-# ==============================================================================
+# Tests de Validación de Host Header
 class TestHostHeaderValidation:
     """Tests para validación de Host header (M5: prevención de host header injection)."""
 
@@ -806,9 +771,7 @@ class TestHostHeaderValidation:
         assert len(allowed) >= 1
 
 
-# ==============================================================================
-# Tests Adicionales - Ciclo 1 Auditoría (B4, M2, M3)
-# ==============================================================================
+# Tests Adicionales - Ciclo 1 Auditoría
 class TestAuditCycle1Fixes:
     """Tests para verificar correcciones del Ciclo 1 de auditoría."""
 
@@ -876,9 +839,7 @@ class TestAuditCycle1Fixes:
         assert 'microphone=()' in pp
 
 
-# ==============================================================================
-# Tests de Correcciones Auditoría Ciclo 1 (2026-01-21)
-# ==============================================================================
+# Tests de Correcciones Auditoría Ciclo 1
 class TestAuditCorrectionsCycle1:
     """Tests para verificar correcciones de la auditoría Ciclo 1."""
 
@@ -955,9 +916,7 @@ class TestAuditCorrectionsCycle1:
         assert manifest['id'] == '/?source=pwa'
 
 
-# ==============================================================================
-# Tests de Correcciones Auditoría Ciclo 1 (2026-01-21 - Fixes)
-# ==============================================================================
+# Tests de Correcciones Auditoría Ciclo 1 - Fixes
 class TestAuditCycle1Fixes:
     """Tests para verificar correcciones adicionales del Ciclo 1."""
 
@@ -1032,9 +991,7 @@ class TestAuditCycle1Fixes:
         assert b'lottie.min.js' in response.data
 
 
-# ==============================================================================
-# Tests de Correcciones Auditoría Ciclo 1 - Fase 2 (2026-01-22)
-# ==============================================================================
+# Tests de Correcciones Auditoría Ciclo 1 - Fase 2
 class TestAuditCycle1Phase2:
     """Tests para verificar correcciones de la auditoría Ciclo 1 Fase 2."""
 
@@ -1082,9 +1039,7 @@ class TestAuditCycle1Phase2:
         assert 'defer' in content and 'sw-register.js' in content
 
 
-# ==============================================================================
-# Tests de Validación REDIS_URL (H1-M02)
-# ==============================================================================
+# Tests de Validación REDIS_URL
 class TestRedisURLValidation:
     """Tests para validación de esquemas de REDIS_URL."""
 

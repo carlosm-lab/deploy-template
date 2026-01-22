@@ -3,23 +3,22 @@
 {% block title %}Sitio en Construcción{% endblock %}
 
 {% block content %}
-<!-- SVG Definitions (global) -->
+<!-- Definiciones SVG -->
 {% include "components/svg_defs.html" %}
 
-<!-- Animated Gears Background (fixed position) -->
+<!-- Engranajes animados -->
 <div class="fixed inset-0 overflow-visible pointer-events-none z-0">
     {% include "components/animated_gears.html" %}
 </div>
 
-<!-- Main Content -->
+<!-- Contenido principal -->
 <main class="flex-grow flex items-center justify-center relative px-4 py-12 w-full z-10 min-h-screen">
-    <!-- Glass Panel Content -->
     <div
         class="relative w-full max-w-[1100px] glass-panel rounded-3xl shadow-glass flex flex-col md:flex-row z-10 overflow-hidden ring-1 ring-white/60">
-        <!-- Left Side - Text Content -->
+        <!-- Lado izquierdo -->
         <div class="flex-1 p-10 md:p-14 flex flex-col justify-center relative z-20">
             <div class="relative z-10">
-                <!-- Status Badge -->
+                <!-- Badge de estado -->
                 <div
                     class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100/80 border border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-8 shadow-sm backdrop-blur-sm">
                     <span
@@ -27,33 +26,32 @@
                     Designed BY: Carlos Molina
                 </div>
 
-                <!-- Title -->
+                <!-- Título -->
                 <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] mb-6 tracking-tight">
                     SITIO EN <br />
                     <span class="text-metallic drop-shadow-sm">CONSTRUCCIÓN</span>
                 </h1>
 
-                <!-- Description -->
+                <!-- Descripción -->
                 <p class="text-slate-500 text-lg leading-relaxed mb-10 max-w-md font-medium">
                     No tengo idea de lo que estoy haciendo, pero regresa más tarde, quizá te sorprenda.
                 </p>
 
-                <!-- Status Panel -->
+                <!-- Panel de estado -->
                 {% include "components/status_panel.html" %}
             </div>
         </div>
 
-        <!-- Right Side - Robot Animation -->
+        <!-- Lado derecho - Animación robot -->
         <div
             class="w-full md:w-[50%] bg-gradient-to-br from-slate-50 to-slate-200/50 relative min-h-[500px] flex items-center justify-center overflow-hidden border-l border-white/40 shadow-inner">
             <div
                 class="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[80%] bg-blue-400/10 blur-[80px] rounded-full pointer-events-none">
             </div>
 
-            <!-- Robot -->
             {% include "components/robot.html" %}
 
-            <!-- Shadow -->
+            <!-- Sombra -->
             <div
                 class="absolute bottom-10 left-1/2 -translate-x-1/2 w-48 h-8 bg-black/10 blur-xl rounded-[100%] animate-[float-shadow_6s_ease-in-out_infinite]">
             </div>
@@ -63,9 +61,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<!-- M5: Lottie Animation Library (deferred for better LCP - B7) -->
-<!-- Only loaded on index page, not error pages -->
+<!-- Lottie y animación del robot -->
 <script defer src="{{ url_for('static', filename='js/lottie.min.js') }}"></script>
-<!-- Robot Animation (deferred, depends on lottie) -->
 <script defer src="{{ url_for('static', filename='js/robot.js') }}"></script>
 {% endblock %}

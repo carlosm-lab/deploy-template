@@ -1,28 +1,18 @@
-/**
- * Main Stylesheet - Under Construction Template
- * Estilos personalizados que complementan Tailwind CSS
- */
+/* Estilos principales */
 
-/* ======================================
-   1. Base Styles
-   ====================================== */
-
+/* Base */
 body {
     background: transparent;
     background-image: radial-gradient(circle at center top, rgba(248, 250, 252, 0.9), rgba(203, 213, 225, 0.7));
 }
 
-/* Font Fallback Strategy - moved from inline style */
 .font-sans {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
         'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol';
 }
 
-/* ======================================
-   2. Material Symbols (moved from inline for CSP compliance)
-   ====================================== */
-
+/* Material Symbols */
 .material-symbols-outlined {
     font-family: 'Material Symbols Outlined', 'Material Icons', sans-serif;
     font-weight: normal;
@@ -40,16 +30,12 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Fallback: Ensure icons don't break layout if font fails */
 .material-symbols-outlined {
     min-width: 24px;
     min-height: 24px;
 }
 
-/* ======================================
-   2. Typography
-   ====================================== */
-
+/* Tipografía */
 .text-metallic {
     background: linear-gradient(to bottom, #334155, #64748B);
     -webkit-background-clip: text;
@@ -57,10 +43,7 @@ body {
     background-clip: text;
 }
 
-/* ======================================
-   3. Glass & 3D Effects
-   ====================================== */
-
+/* Efectos Glass y 3D */
 .glass-panel {
     background: rgba(255, 255, 255, 0.65);
     backdrop-filter: blur(12px);
@@ -75,10 +58,7 @@ body {
         5px 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* ======================================
-   4. Progress Bar Stripes
-   ====================================== */
-
+/* Barra de progreso */
 .progress-stripes {
     background: linear-gradient(45deg,
             rgba(255, 255, 255, 0.2) 25%,
@@ -92,24 +72,17 @@ body {
     animation: stripes-move 3s linear infinite reverse;
 }
 
-/* Force progress bar width from inline style - DO NOT add width rules here */
 .progress-bar {
-    /* Width is controlled via inline style in template */
     flex-shrink: 0;
     flex-grow: 0;
 }
 
-/* Progress bar width - Using CSS class instead of inline style because CSP blocks inline styles */
 .w-progress-75 {
     width: 75% !important;
     max-width: 75% !important;
 }
 
-/* ======================================
-   5. Animations
-   ====================================== */
-
-/* Float 3D Animation */
+/* Animaciones */
 @keyframes float-3d {
 
     0%,
@@ -122,7 +95,6 @@ body {
     }
 }
 
-/* Gear Spin Animation */
 @keyframes gear-spin-slow {
     from {
         transform: rotate(0deg);
@@ -133,7 +105,6 @@ body {
     }
 }
 
-/* Arm Pivot Animation */
 @keyframes arm-pivot {
 
     0%,
@@ -146,7 +117,6 @@ body {
     }
 }
 
-/* Eye Blink Animation */
 @keyframes eye-blink {
 
     0%,
@@ -163,7 +133,6 @@ body {
     }
 }
 
-/* Float Shadow Animation */
 @keyframes float-shadow {
 
     0%,
@@ -178,7 +147,6 @@ body {
     }
 }
 
-/* Stripes Movement */
 @keyframes stripes-move {
     0% {
         background-position: 0 0;
@@ -189,53 +157,36 @@ body {
     }
 }
 
-/* ======================================
-   6. Responsive Adjustments
-   ====================================== */
-
+/* Responsive */
 @media (max-width: 768px) {
     .glass-panel {
         margin: 1rem;
     }
 }
 
-/* ======================================
-   7. Custom Utilities
-   ====================================== */
-
-/* Steel gradient background */
+/* Utilidades */
 .bg-steel-gradient {
     background: linear-gradient(135deg, #cbd5e1 0%, #f1f5f9 50%, #94a3b8 100%);
 }
 
-/* Gold gradient background */
 .bg-gold-gradient {
     background: linear-gradient(135deg, #fcd34d 0%, #fef3c7 50%, #d97706 100%);
 }
 
-/* ======================================
-   8. B6: Classes to replace inline styles (CSP hardening ready)
-   ====================================== */
-
-/* Drop shadow for gear SVGs - replaces inline style="filter: drop-shadow(...)" */
+/* Sombras engranajes */
 .gear-shadow-lg {
-    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.15));
 }
 
 .gear-shadow-xl {
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
 }
 
-/* Material Symbols filled variant - replaces inline font-variation-settings */
 .material-symbols-filled {
     font-variation-settings: 'FILL' 1;
 }
 
-/* ======================================
-   9. Cycle 2 Fix: Noscript fallback (CSP compliance)
-   ====================================== */
-
-/* Styles for noscript warning message - moved from inline to external CSS */
+/* Aviso noscript */
 .noscript-warning {
     background: #fef3c7;
     color: #92400e;

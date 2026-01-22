@@ -5,7 +5,7 @@
 {% block content %}
 <main class="flex-grow flex items-center justify-center min-h-screen px-4">
     <div class="text-center max-w-md">
-        <!-- Error Icon -->
+        <!-- Ícono -->
         <div class="mb-8">
             <div
                 class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-50 border border-red-100 shadow-lg">
@@ -13,18 +13,18 @@
             </div>
         </div>
 
-        <!-- Error Code -->
+        <!-- Código -->
         <h1 class="text-8xl font-extrabold text-slate-200 mb-2">500</h1>
 
-        <!-- Title -->
+        <!-- Título -->
         <h2 class="text-2xl font-bold text-slate-700 mb-4">Error del servidor</h2>
 
-        <!-- Description -->
+        <!-- Descripción -->
         <p class="text-slate-500 mb-4">
             Ha ocurrido un error inesperado. Nuestro equipo ha sido notificado y estamos trabajando para solucionarlo.
         </p>
 
-        <!-- Error Reference (for support) -->
+        <!-- Referencia -->
         {% if error_id %}
         <p class="text-slate-400 text-sm mb-8">
             Referencia: <code class="bg-slate-100 px-2 py-1 rounded text-xs">{{ error_id }}</code>
@@ -33,14 +33,13 @@
         <p class="mb-8"></p>
         {% endif %}
 
-        <!-- Actions -->
+        <!-- Acciones -->
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="/"
                 class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
                 <span class="material-symbols-outlined">home</span>
                 Volver al inicio
             </a>
-            <!-- CSP Compliant: data-action instead of onclick -->
             <button type="button" data-action="reload"
                 class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-slate-200 text-slate-600 font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                 <span class="material-symbols-outlined">refresh</span>
@@ -49,5 +48,4 @@
         </div>
     </div>
 </main>
-{# Note: error-handlers.js is loaded by error_base.html via extra_scripts block #}
 {% endblock %}

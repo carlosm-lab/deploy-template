@@ -1,6 +1,4 @@
-# =============================================================================
 # CI/CD Pipeline - Flask Deploy Template
-# =============================================================================
 name: CI
 
 on:
@@ -30,12 +28,11 @@ jobs:
       
       - name: Update Service Worker cache version
         run: |
-          # Auto-update DEPLOY_HASH for cache invalidation
           HASH=$(date +%Y%m%d%H%M)
           sed -i "s/DEPLOY_HASH = '[^']*'/DEPLOY_HASH = '$HASH'/" static/sw.js
           echo "Updated DEPLOY_HASH to: $HASH"
       
-      - name: Verify lottie.min.js integrity (H1-A01)
+      - name: Verify lottie.min.js integrity
         run: |
           EXPECTED="a0757321f974527bda3cc2593bf56cc7ffe4578421249ced6ae49ffb1c529f90"
           ACTUAL=$(sha256sum static/js/lottie.min.js | cut -d' ' -f1)
@@ -45,15 +42,15 @@ jobs:
             echo "Actual:   $ACTUAL"
             exit 1
           fi
-          echo "✓ lottie.min.js integrity verified (SHA256 match)"
+          echo "✓ lottie.min.js integrity verified"
       
       - name: Run tests with coverage
         run: pytest tests/ -v --cov=app --cov-report=term-missing --cov-fail-under=70
       
-      - name: Security audit (pip-audit)
+      - name: Security audit
         run: pip-audit --strict
       
-      - name: Lint check (flake8)
+      - name: Lint check
         run: flake8 app.py --max-line-length=120 --ignore=E501,W503,E402,E226,E302,E303
       
       - name: Smoke test
@@ -75,19 +72,17 @@ jobs:
             test -f "$f" || exit 1
           done
       
-      - name: "Validate PWA icons (M6: size verification)"
+      - name: Validate PWA icons
         run: |
           test -f static/favicon.svg
           test -f static/icons/icon-192.png
           test -f static/icons/icon-512.png
-          # M6: Verify icons are not empty or corrupt (minimum reasonable size)
           test $(stat --printf="%s" static/icons/icon-192.png) -gt 1000 || { echo "ERROR: icon-192.png too small"; exit 1; }
           test $(stat --printf="%s" static/icons/icon-512.png) -gt 5000 || { echo "ERROR: icon-512.png too small"; exit 1; }
-          echo "PWA icons validated successfully"
+          echo "PWA icons validated"
       
-      - name: Validate CSP compliance (M6)
+      - name: Validate CSP compliance
         run: |
-          # Check offline.html has no inline scripts or styles
           if grep -E '<script[^>]*>[^<]' static/offline.html | grep -v 'src='; then
             echo "ERROR: Found inline script in offline.html"
             exit 1
@@ -96,8 +91,7 @@ jobs:
             echo "ERROR: Found inline style in offline.html"
             exit 1
           fi
-          # Verify new CSP-compliant files exist
           test -f static/css/offline.css
           test -f static/js/offline.js
           test -f static/js/error-handlers.js
-          echo "CSP compliance validation passed"
+          echo "CSP compliance validated"
