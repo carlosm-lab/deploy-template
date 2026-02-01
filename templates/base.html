@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}?v=4" />
 
     {% block extra_head %}{% endblock %}
 </head>
@@ -43,6 +44,7 @@
     {% block content %}{% endblock %}
 
     <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/skeleton.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/sw-register.js') }}"></script>
     {% block extra_scripts %}{% endblock %}

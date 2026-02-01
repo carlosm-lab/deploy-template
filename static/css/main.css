@@ -160,7 +160,16 @@ body {
 /* Responsive */
 @media (max-width: 768px) {
     .glass-panel {
-        margin: 1rem;
+        margin: 0;
+        border-radius: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Título más pequeño en móvil */
+    .title-construction {
+        font-size: 1.75rem !important;
+        line-height: 1.2 !important;
     }
 }
 
